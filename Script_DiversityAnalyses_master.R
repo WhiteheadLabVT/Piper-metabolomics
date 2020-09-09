@@ -93,8 +93,8 @@ div <- div[c(1:8, 1320, 9:1319)]
 SD <- read.csv("chem_structural_similarity_intrasample.csv")
 
 #metric shows the "chemical similarity between samples, but I would like to look at 
-#diversity, so I will take the inverse
-SD$SD <- 1/SD$chem_similarity_internal
+#diversity, so I will do 1-similarity
+SD$SD <- 1-SD$chem_similarity_internal
 
 #adding sample ID info to SD dataset
 d.temp <- IDs[,c(1,5)]
@@ -118,6 +118,51 @@ SD$tissue <- recode(SD$tissue, lf = "leaf", sd = "seed",
                                       uf="unripe", rf = "ripe")
 
 
+
+###Structural diversity data, intersample--overall structural composition of each sample
+##compared to all other samples in a distance matrix
+
+SD_inter <- read.csv("chem_struct_sim_piper12spp_presabs.csv")
+SD_inter <- SD_inter[,1:146] #seems like whole matrix was in there twice? Just taking the first one for now--need to check with Jerry
+
+#data are similarity scores, and I want diversity, so I will take 1-sim
+SD_inter[2:146] <- 1-SD_inter[2:146]
+
+
+#Need to extract explanatory variables for this
+
+#species
+SD_inter <- mutate(SD_inter, species=gsub("_.*", "", X))# gsub("[a-z]*_", "", X))) 
+SD_inter$species <- recode(SD_inter$species, adu="aduncum", aur="auritum", bio= "biolleyi",
+                     col="colonense", gen="generalense", gla="glabrescens",
+                     mul="multiplinervum", pel="peltatum", ret="reticulatum",
+                     san="sancti-felicis", sil="silvivagum", umb="umbricola")
+
+#tissue
+substrRight <- function(x, n){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+SD_inter <- mutate(SD_inter, tissue=substrRight(gsub("_[0-9]*", "", X), 2))
+SD_inter$tissue <- recode(SD_inter$tissue, lf = "leaf", sd = "seed", 
+                    uf="unripe", rf = "ripe")
+
+#plantID
+
+SD_inter <- mutate(SD_inter, extraction=gsub("[a-z]*_", "",substr(X, 1, nchar(X)-7)))
+
+#adding sample ID info to SD_inter dataset
+d.temp <- IDs[,c(1,5)]
+SD_inter <- full_join(SD_inter, d.temp, by="extraction")
+SD_inter <- SD_inter[-c(146:149),]
+
+SD_inter$PlantID <- paste(SD_inter$species, SD_inter$PlantID, sep="_")
+
+#removing col_12 with no other tissues
+SD_inter <- SD_inter[which(SD_inter$PlantID !="colonense_12"),]
+SD_inter <- SD_inter[,-42]
+
+
+SD_inter <- SD_inter[, c(146:149, 1:145)]
 
 
 ###Rarefaction function
@@ -187,14 +232,47 @@ show_col(pal)
 pal2 <- pal[c(1,4)]
 
 
-
-
-
 save.image("Workspace_PiperChem")
 
 
+#-------------------------------------------------------------
+#  Overall PERMANOVAs to assess differences in composition across samples
+#--------------------------------------------------
+
+load("Workspace_PiperChem")
+
+d.temp <- div[-c(1:9)]
+d.temp.expl <- div[c(3,5)]
+m1 <- adonis2(d.temp ~ tissue*sp, data = d.temp.expl, method = "bray", permutations = 9999)
+m1
+#strong effects of tissue, species, and their interaction
+
+#now trying to split by species and look for tissue level differences
+for(i in 1: length(levels(div$sp))){
+  sp <- levels(div$sp)[i]
+  d <- div[which(div$sp==sp),]
+  d.temp <- d[-c(1:9)]
+  d.temp.expl <- d[1:9]
+  m <- adonis2(d.temp ~ tissue, data=d.temp.expl, method="bray")
+  Fstat <- m$F[1]
+  P <- m$`Pr(>F)`[1]
+  t <- cld(glht(m, mcp(tissue="Tukey")))
+  l <- t$mcletters$Letters
+  newrow <- data.frame(sp=as.character(sp), Fstat=as.numeric(Fstat), P=as.numeric(P), 
+                       leaf=as.character(l[1]), seed=as.character(l[2]), 
+                       unripe=as.character(l[3]), ripe=as.character(l[4]))
+  beta.byspecies <- rbind(beta.byspecies, newrow)
+}
 
 
+
+##Now trying a PERMANOVA on the structural data
+
+d.temp <- as.dist(SD_inter[,6:149])
+d.temp.expl <- SD_inter[,c(1:5)]
+m2 <- adonis2(d.temp ~ tissue*species, data = d.temp.expl, method = "bray", permutations = 9999)
+m2
+plot(d.temp)
 
 #-------------------------------------------------------------
 #  Gamma diversity
@@ -1098,6 +1176,26 @@ w2 <- vegdist(d.temp, method="bray")
 plot(w2)
 
 
+#Nice plot
+beta.div <- data.frame(tissue=wb$group, beta.div=wb$distances)
+beta.div$tissue <- factor(beta.div$tissue, levels=c("leaf","seed", "unripe", "ripe"))
+
+ylab <- expression(paste("Beta diversity (", omega, ")"))
+p <- ggplot(beta.div, aes(tissue, beta.div, fill=tissue)) + 
+  geom_boxplot(show.legend = FALSE) +
+  labs(x="", y=ylab) +
+  scale_fill_manual(values=pal) +
+  scale_x_discrete(labels=c("leaf", "seed", "unripe\npulp", "ripe\npulp")) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank())+
+  ylim(0.25,0.57) +
+  annotate("text", x = 1:4, y = c(0.43, 0.56, 0.50, 0.48), label = c("A", "B", "B", "B")) 
+p
+ggsave("Betadiv.tiff", width = 8, height = 6.5, units = "cm")
+ggsave("Betadiv.eps", width = 8, height = 6.5, units = "cm", device=cairo_ps)
+ggsave("Betadiv.pdf", width = 8, height = 6.5, units = "cm", device = cairo_pdf)
+
 
 
 #can also look at differences for species
@@ -1223,11 +1321,29 @@ adonis_seed
 
 
 
-beta.div <- data.frame(tissue=wb$group, beta.div=wb$distances)
-beta.div$tissue <- factor(beta.div$tissue, levels=c("leaf","ripe seed", "unripe", "ripe"))
 
-ylab <- expression(paste("Beta diversity (", omega, ")"))
-p <- ggplot(beta.div, aes(tissue, beta.div, fill=tissue)) + 
+
+##Now trying a beta-diversity analysis on the structural data--so this is something 
+#like "structural beta diversity"
+
+d.temp <- as.dist(SD_inter[,6:149])
+plot(d.temp)
+
+#then we can look at the distances between each sample and the group centroid
+#but we need to define a specific group (e.g. tissue)
+wb <- betadisper(d.temp, SD_inter$tissue)
+anova(wb)
+TukeyHSD(wb)
+boxplot(wb)
+
+##structural beta-diversity higher for fruits (at least seeds and ripe) than in leaves
+
+#Nice plot
+s.beta.div <- data.frame(tissue=wb$group, beta.div=wb$distances)
+s.beta.div$tissue <- factor(s.beta.div$tissue, levels=c("leaf","seed", "unripe", "ripe"))
+
+ylab <- expression(paste("Structural beta diversity (", omega, ")"))
+p <- ggplot(s.beta.div, aes(tissue, beta.div, fill=tissue)) + 
   geom_boxplot(show.legend = FALSE) +
   labs(x="", y=ylab) +
   scale_fill_manual(values=pal) +
@@ -1235,13 +1351,12 @@ p <- ggplot(beta.div, aes(tissue, beta.div, fill=tissue)) +
   theme_bw() +
   theme(panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank())+
-  ylim(0.25,0.57) +
-  annotate("text", x = 1:4, y = c(0.43, 0.56, 0.50, 0.48), label = c("A", "B", "B", "B")) 
+  ylim(0.2,0.67) +
+  annotate("text", x = 1:4, y = c(0.48, 0.64, 0.52, 0.51), label = c("A", "B", "AB", "B")) 
 p
-ggsave("Betadiv.tiff", width = 8, height = 6.5, units = "cm")
-ggsave("Betadiv.eps", width = 8, height = 6.5, units = "cm", device=cairo_ps)
-ggsave("Betadiv.pdf", width = 8, height = 6.5, units = "cm", device = cairo_pdf)
-
+ggsave("StructuralBetadiv.tiff", width = 8, height = 6.5, units = "cm")
+ggsave("StructuralBetadiv.eps", width = 8, height = 6.5, units = "cm", device=cairo_ps)
+ggsave("StructuralBetadiv.pdf", width = 8, height = 6.5, units = "cm", device = cairo_pdf)
 
 
 
