@@ -3,6 +3,7 @@ library(lme4)
 library(ggplot2)
 library(multcomp)
 library(vegan)
+library(lmPerm)
 library(viridis)
 library(scales)
 library(VennDiagram)
@@ -246,6 +247,27 @@ d.temp.expl <- div[c(3,5)]
 m1 <- adonis2(d.temp ~ tissue*sp, data = d.temp.expl, method = "bray", permutations = 9999)
 m1
 #strong effects of tissue, species, and their interaction
+
+#can also try this with the lmPerm package
+
+#calculate the distance matrix
+w <- vegdist(d.temp, binary=TRUE, method="bray")
+plot(w)
+w <- as.matrix(w)
+
+w_col <- w[lower.tri(w)] 
+who.vs.who <- expand.grid(rownames(w), rownames(w)) 
+who <- who.vs.who[lower.tri(w),] 
+names(w_col) <- paste(who[,1], who[,2], sep=".vs.")
+
+
+#Example code from Jerry--not sure what format the factor
+#variables are in here
+m1 <- aovp(dissim ~ tissue*species, data = csd_col, maxIter = 10000, perm = "Prob")
+summary(mod.piper)
+TukeyHSD(mod.piper)
+
+
 
 #now trying to split by species and look for tissue level differences
 for(i in 1: length(levels(div$sp))){
