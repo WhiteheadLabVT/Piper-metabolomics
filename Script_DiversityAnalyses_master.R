@@ -176,6 +176,7 @@ SD_inter <- SD_inter[, c(145:148, 1:144)]
 ##setting color palette for all figures
 ##viridis colors
 show_col(viridis_pal()(4))
+show_col(viridis_pal()(60))
 
 #would like to have
 #leaves=green, seeds=yellow, ripe=purple, unripe=blue
@@ -192,6 +193,19 @@ pal2 <- pal[c(1,4)]
 
 
 save.image("Workspace_PiperChem")
+
+
+#subsetting data for Oikos review
+
+d.temp <- div[which(div$sp=="reticulatum"),] #c(1,2,3,5,6, 7)]
+d.temp.SD <- SD[which(SD$species=="reticulatum"),c(3,6)]
+
+d.Pret <- full_join(d.temp, d.temp.SD, by="extraction")
+plot(d.Pret$tissue, d.Pret$SD)
+plot(d.Pret$tissue, d.Pret$richness)
+
+d.Pret <- d.Pret[-c(2,7)]
+write.csv(d.Pret, file="Oikos_Fig1_Pret_richness.csv")
 
 
 #-------------------------------------------------------------
@@ -1280,8 +1294,11 @@ plot(SD$SD ~ SD$species)
 m1 <- lmer(SD ~ tissue * species + (1|PlantID), data=SD) 
 #m1 <- lm(SD ~ tissue * species, data=SD) 
 summary(m1)
-anova(m1, test="F")
+#anova(m1, test="F")
 drop1(m1, test="Chisq")
+
+#singular fit errors go away when you drop random effect, but overall
+#result of a strong tissue x species interaction is clear either way
 
 interaction.plot(SD$tissue, SD$species, SD$SD)
 
@@ -1342,7 +1359,7 @@ TukeyLab2 <- TukeyLab[-c(5:16,29:36),]
 #ypos_lab <- TukeyLab2$max + 60 
 
 TukeyLab2$xpos <- rep(c(1,2,3,4), 7)
-TukeyLab2$ypos <- TukeyLab2$max + 60 
+TukeyLab2$ypos <- TukeyLab2$max + 0.1 
 
 Plabs <- character()
 for (i in 1:length(lmm.byspecies$sp)){
@@ -1358,30 +1375,21 @@ for (i in 1:length(lmm.byspecies$sp)){
 LRT_Lab <- data.frame(species=lmm.byspecies$sp, 
                       tissue=factor("leaf", levels=c("leaf", "seed", "unripe", "ripe")),
                       labs=sprintf("italic(X^2) == %.2f~%s", lmm.byspecies$X, Plabs),
-                      xpos=rep(2.5, 12), ypos=c(330, rep(1200, 4),  330, 330,
-                                                rep(1200, 4), 330))
+                      xpos=c(rep(2.5, 4), 3, rep(2.5,7)), 
+                      ypos=c(rep(0.9965, 4), 0.9998, rep(0.9965, 7)))
 
 #see https://r-graphics.org/recipe-annotate-facet 
 #for good examples on how to do this
 
-LRT_Lab2 <- data.frame(tissue="leaf", SD = 1000,
-                  X2lab = sprintf("italic(X^2) == %.2f", lmm.byspecies$X[5]),
-                  Plab = sprintf(Plabs[5]),
-                  species = factor("generalense",levels = levels(SD$species)))
-
-
 
 p <- ggplot(SD, aes(tissue, SD, fill=tissue)) + 
   geom_boxplot() +
+  ylim(0.9955, 1) +
   scale_fill_manual(values=pal, aesthetics = "fill") +
-  labs(x=element_blank(), y="Structural Diversity")+
+  labs(x=element_blank(), y="Structural Complexity")+
   facet_wrap(vars(species), ncol=4)+
-  geom_text(data=TukeyLab2, mapping=aes(x=xpos, y=max+200, label=x)) +
-  geom_text(data=LRT_Lab[-5,], mapping=aes(x=xpos, y=ypos, label=labs), 
-            parse=TRUE, size=3) +
-  geom_text(data=LRT_Lab2, mapping=aes(x=3, y=1200, label=X2lab), 
-            parse=TRUE, size=3) +
-  geom_text(data=LRT_Lab2, mapping=aes(x=3, y=1050, label=Plab), 
+  geom_text(data=TukeyLab2, mapping=aes(x=xpos, y=max+0.0007, label=x)) +
+  geom_text(data=LRT_Lab, mapping=aes(x=xpos, y=ypos, label=labs), 
             parse=TRUE, size=3) +
   theme_bw() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
@@ -1392,9 +1400,9 @@ p <- ggplot(SD, aes(tissue, SD, fill=tissue)) +
 p
 
 
-ggsave("Strucdiv.png", width = 15, height = 15, units = "cm")
-ggsave("Strucdiv.eps", width = 15, height = 15, units = "cm", device=cairo_ps)
-ggsave("Strucdiv.pdf", width = 15, height = 15, units = "cm", device = cairo_pdf)
+ggsave("Strucdiv.png", width = 18, height = 15, units = "cm")
+ggsave("Strucdiv.eps", width = 18, height = 15, units = "cm", device=cairo_ps)
+ggsave("Strucdiv.pdf", width = 18, height = 15, units = "cm", device = cairo_pdf)
 
 
 
