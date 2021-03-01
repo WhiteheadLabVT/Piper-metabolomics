@@ -485,7 +485,7 @@ write.csv(tbl, file="adonis.byspecies.csv")
 #-----------------------------------------------------------
 
 load("Workspace_PiperChem")
-#load("Workspace_PiperChem_Gamma")  #last rarefaction run with 5000 reps
+#load("Workspace_PiperChem_Gamma")  #last rarefaction run with 1000 reps
 
 #-----------Venn------------------
 #First, will show a venn diagram with the total count of compounds detected in each
@@ -538,9 +538,9 @@ l <- length(overlap$a9)
 #set4=u
 
 palVenn <- pal[c(1,4,2,3)]
-png(height=500, width=500, filename="Venn.tiff", type="cairo")
+#png(height=500, width=500, filename="Venn.tiff", type="cairo")
 #tiff(height=500, width=500, filename="Venn.tiff", type="cairo")
-#cairo_pdf(height=7, width=7, filename="Venn.pdf")
+cairo_pdf(height=7, width=7, filename="Venn.pdf")
 #cairo_ps(height=7, width=7, filename="Venn.eps")
 venn <- draw.quad.venn(length(lf), length(r), length(s), length(u), length(intersect(lf, r)),
                        length(intersect(lf, s)),length(intersect(lf, u)),length(intersect(r,s)),
@@ -605,7 +605,7 @@ dev.off()
 #Use for debugging function:
 compounds <- d.temp
 meta <- m.temp
-reps <- 100
+reps <- 10
 mod=c("arrhenius","gitay","lomolino","asymp", 
            "gompertz", "logis")
       
@@ -678,7 +678,7 @@ CPR <- function(compounds, meta, reps=100, mod=c("arrhenius","gitay","lomolino",
     d.temp2 <- d.temp[1:ncol(d.temp)-1]
     m.temp <- d.temp2 %>%
       summarise_all(list(mean=mean, SE=se, CI.high=ci.high, CI.low=ci.low), na.rm=TRUE) %>%
-      pivot_longer(cols=ends_with(c("mean", "SE", "high", "low"))) %>%
+      pivot_longer(cols=everything()) %>% 
       separate (name, into = c("parameter", "sum_stat"), sep = "_" ) %>%
       pivot_wider(names_from=sum_stat, values_from=value)
     m.temp <- as.data.frame(m.temp)
@@ -707,11 +707,12 @@ allCoefEst <- data.frame(tiss=factor(levels=levels(div$tissue)),
                          SE=numeric(), CI.high=numeric(), CI.low=numeric())
 allAIC <- data.frame(tiss=factor(levels=levels(div$tissue)),
                          meanAIC=numeric(), SE=numeric(), CI.high=numeric(), CI.low=numeric())
+
 for(i in 1:length(levels(div$tissue))){
   tiss <- levels(div$tissue)[i]
   d.temp <- div[which(div$tissue==tiss), -c(1:9)]
   m.temp <- div[which(div$tissue==tiss), c(1,3)]
-  CPR_out <- CPR(d.temp, m.temp, reps=500) 
+  CPR_out <- CPR(d.temp, m.temp, reps=10) 
   curves <- CPR_out[[3]]
   curves$tiss <- tiss
   curves <- curves[c(5,1:4)]
@@ -734,6 +735,40 @@ allAIC
 #lomolino is close and occasionally better for leaf or seed, but lomolino estimates
 #for asymtote are really variable and sometimes WAY higher that observed (e.g. 35,000 compounds) 
 
+#Will do a longer run with just the asymptote models
+
+allCurves <- data.frame(tiss=factor(levels=levels(div$tissue)), samples=numeric(), mean=numeric(), 
+                        CI_high=numeric(), CI_low=numeric())
+allCoefEst <- data.frame(tiss=factor(levels=levels(div$tissue)),
+                         model_type=character(), parameter=character(), mean=numeric(),
+                         SE=numeric(), CI.high=numeric(), CI.low=numeric())
+allAIC <- data.frame(tiss=factor(levels=levels(div$tissue)),
+                     meanAIC=numeric(), SE=numeric(), CI.high=numeric(), CI.low=numeric())
+
+for(i in 1:length(levels(div$tissue))){
+  tiss <- levels(div$tissue)[i]
+  d.temp <- div[which(div$tissue==tiss), -c(1:9)]
+  m.temp <- div[which(div$tissue==tiss), c(1,3)]
+  CPR_out <- CPR(d.temp, m.temp, mod="asymp", reps=1000) 
+  curves <- CPR_out[[3]]
+  curves$tiss <- tiss
+  curves <- curves[c(5,1:4)]
+  allCurves <- rbind(allCurves, curves)
+  coefs <- CPR_out[[1]]
+  coefs$tiss <- tiss
+  coefs <- coefs[c(7,1:6)]
+  allCoefEst <- rbind(allCoefEst, coefs)
+  AICs <- CPR_out[[2]]
+  AICs$tiss <- tiss
+  AICs <- AICs[c(6,1:5)]
+  allAIC <- rbind(allAIC, AICs) 
+}
+
+allCurves
+allCoefEst
+allAIC
+
+
 asymp.finalest <- allCoefEst[which(allCoefEst$model_type=="asymp" & allCoefEst$parameter=="Asym"),]
 asymp.finalest
 #save these for table
@@ -746,7 +781,7 @@ write.csv(asymp.finalest, file="gammaestimates.csv")
 #ordering factor levels so it plots in this order on graphs
 allCurves$tiss <- factor(allCurves$tiss, levels=c("leaf","seed", "unripe", "ripe"))
 p <- ggplot(data=allCurves) +
-  geom_line(aes(x=samples, y=mean, group=tiss, color=tiss), size=1) +
+  geom_line(aes(x=samples, y=mean, group=tiss, color=tiss), size=0.75) +
   #geom_ribbon(aes(x=samples, ymin=CI_low, ymax=CI_high, group=tiss, fill=tiss), alpha=0.2) +
   scale_colour_manual(values=pal) +
   scale_fill_manual(values=pal) +
@@ -765,7 +800,7 @@ p
 ggsave("Rarefaction.pdf", width = 8, height = 6.5, units = "cm", device = cairo_pdf)
 
 
-
+save.image("Workspace_PiperChem_Gamma")
 
 
 #-------------------------------------------------------------------
