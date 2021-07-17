@@ -151,6 +151,7 @@ SD_inter$tissue <- recode(SD_inter$tissue, lf = "leaf", sd = "seed",
 
 #plantID
 
+SD_inter$X <- as.character(SD_inter$X)
 SD_inter <- mutate(SD_inter, extraction=gsub("[a-z]*_", "",substr(X, 1, nchar(X)-7)))
 
 #adding sample ID info to SD_inter dataset
@@ -168,7 +169,7 @@ SD_inter <- SD_inter[,-which(colnames(SD_inter)=="pel_uf_52_180511")]
 
 
 
-SD_inter <- SD_inter[, c(145:148, 1:144)]
+SD_inter <- SD_inter[, c(1, 145:148, 2:144)]
 
 
 
@@ -537,11 +538,14 @@ l <- length(overlap$a9)
 #set3=s
 #set4=u
 
+library(svglite)
+
 palVenn <- pal[c(1,4,2,3)]
 #png(height=500, width=500, filename="Venn.tiff", type="cairo")
 #tiff(height=500, width=500, filename="Venn.tiff", type="cairo")
-cairo_pdf(height=7, width=7, filename="Venn.pdf")
+#cairo_pdf(height=7, width=7, filename="Venn.pdf")
 #cairo_ps(height=7, width=7, filename="Venn.eps")
+svglite("Venn.svg", width = 7, height = 7)
 venn <- draw.quad.venn(length(lf), length(r), length(s), length(u), length(intersect(lf, r)),
                        length(intersect(lf, s)),length(intersect(lf, u)),length(intersect(r,s)),
                        length(intersect(r,u)),length(intersect(s,u)), 
@@ -780,24 +784,29 @@ write.csv(asymp.finalest, file="gammaestimates.csv")
 
 #ordering factor levels so it plots in this order on graphs
 allCurves$tiss <- factor(allCurves$tiss, levels=c("leaf","seed", "unripe", "ripe"))
-p <- ggplot(data=allCurves) +
+p2 <- ggplot(data=allCurves) +
   geom_line(aes(x=samples, y=mean, group=tiss, color=tiss), size=0.75) +
   #geom_ribbon(aes(x=samples, ymin=CI_low, ymax=CI_high, group=tiss, fill=tiss), alpha=0.2) +
   scale_colour_manual(values=pal) +
   scale_fill_manual(values=pal) +
   xlab('No. of samples') + ylab('Cumulative richness') +
-  labs(subtitle="(B)")+
+  labs(subtitle="(b)")+
   theme_classic() +
   theme(legend.position=c(0.8,0.4), legend.title=element_blank(),
         legend.key = element_rect(colour = "transparent", fill="transparent")) + 
   #plot.margin = margin(0.25,0.25,0.25,0.75, unit='lines')) +
   xlim(0,37) +
   ylim(0, 1400)
-p
+p2
 
 #ggsave("Rarefaction.png", width = 8, height = 6.5, units = "cm")
 #ggsave("Rarefaction.eps", width = 8, height = 6.5, units = "cm", device=cairo_ps)
-ggsave("Rarefaction.pdf", width = 8, height = 6.5, units = "cm", device = cairo_pdf)
+
+#ggsave("Rarefaction.pdf", width = 8, height = 6.5, units = "cm", device = cairo_pdf)
+
+ggsave("Rarefaction.svg", width=7, height=7, units="cm")
+
+
 
 
 save.image("Workspace_PiperChem_Gamma")
@@ -937,6 +946,7 @@ p
 ggsave("Alphadiv.png", width = 15, height = 15, units = "cm")
 ggsave("Alphadiv.eps", width = 15, height = 15, units = "cm", device=cairo_ps)
 ggsave("Alphadiv.pdf", width = 15, height = 15, units = "cm", device = cairo_pdf)
+ggsave("Alphadiv.svg", width = 15, height = 15, units = "cm")
 
 
 
@@ -1033,7 +1043,7 @@ boxplot(wb2)
 
 
 
-#Data for plot plot
+#Data for boxplot
 beta.div <- data.frame(tissue=wb$group, beta.div=wb$distances)
 beta.div$tissue <- factor(beta.div$tissue, levels=c("leaf","seed", "unripe", "ripe"))
 
@@ -1103,8 +1113,7 @@ for(i in 1: length(levels(div$sp))){
 #level differences (i.e. fruits of species A are very different from species B, etc)
 
 #I am still struggling with the fact that just doing tissue ignores
-#this important factor in the dataset (species) and maybe would
-#be like psuedoreplication??  and you can't do two factors
+#this important factor in the dataset (species) but you can't do two factors
 #simultaneously in betadisper
 
 #solution suggested here is to do the two-factor adonis with interaction, and if 
@@ -1277,7 +1286,7 @@ ylab <- expression(paste("Distance to centroid"))
 p <- ggplot(beta.div, aes(tissue, beta.div, fill=tissue)) + 
   geom_boxplot(show.legend = FALSE) +
   labs(x="", y=ylab) +
-  labs(subtitle="(A)") +
+  labs(subtitle="(a)") +
   scale_fill_manual(values=pal) +
   scale_x_discrete(labels=c("leaf", "seed", "unripe\npulp", "ripe\npulp")) +
   theme_bw() +
@@ -1292,7 +1301,7 @@ p
 p2 <- ggplot(s.beta.div, aes(tissue, beta.div, fill=tissue)) + 
   geom_boxplot(show.legend = FALSE) +
   labs(x="", y=ylab) +
-  labs(subtitle="(B)") +
+  labs(subtitle="(b)") +
   scale_fill_manual(values=pal) +
   scale_x_discrete(labels=c("leaf", "seed", "unripe\npulp", "ripe\npulp")) +
   theme_bw() +
@@ -1313,6 +1322,12 @@ dev.off()
 postscript(height=5, width=3,family="sans", file="betadiv.eps")
 grid.arrange(p, p2)
 dev.off()
+
+svg(height=5, width=3,family="sans", file="betadiv.svg")
+grid.arrange(p, p2)
+dev.off()
+
+
 
 
 #------------------------------------------------------------------------
@@ -1438,7 +1453,7 @@ p
 ggsave("Strucdiv.png", width = 18, height = 15, units = "cm")
 ggsave("Strucdiv.eps", width = 18, height = 15, units = "cm", device=cairo_ps)
 ggsave("Strucdiv.pdf", width = 18, height = 15, units = "cm", device = cairo_pdf)
-
+ggsave("Strucdiv.svg", width = 18, height = 15, units = "cm")
 
 
 
