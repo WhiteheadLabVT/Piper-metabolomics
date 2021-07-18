@@ -1,43 +1,80 @@
-#On 06/02 made it through cleaning/updating code through rarefaction, but something is going weird in the rarefaction 
-# and it does not seem to be doing to constrained part (curves are too perfectly smooth). Need to figure that
-# out and go back to the previous version to compare
-
-
-
 library(dplyr)
 library(lme4)
 library(ggplot2)
 library(gridExtra)
 library(multcomp)
-library(vegan)  #version 2.5-6
+library(vegan)
 library(lmPerm)
 library(viridis)
 library(scales)
 library(VennDiagram)
 
-
 #-----------------------------------------------------
-#   Data wrangling--run this first and save
+#   Data wrangling and functions--run this first and save
 #   workspace, then all other sections can be run independently
 #-----------------------------------------------------
 
+peaks <- read.csv("peaktable_allsamples_allcompounds.csv")
+rownames(peaks) <- peaks[,1]
+peaks <- peaks[,-c(1:2)]
+peaks <- as.data.frame(t(peaks))
+peaks$SampleID <- rownames(peaks)
+peaks <- mutate(peaks, richness=rowSums(peaks[1:1311]>100), richness_all=rowSums(peaks[1:1311] != 0))
+peaks <- mutate(peaks, extraction=gsub("_.*", "",  gsub("[a-z]*_[a-z]*_", "", SampleID)))
+peaks <- peaks[,c(1312:1315, 1:1311)]
+peaks[1:5]
 
-#reading in peak tables
-div_all <- read.csv("Data_Peak_Table.csv")
+IDs <- read.csv("extraction_data_plant_ID.csv")
+IDs <- IDs[1:149,2:5]
+colnames(IDs)[1] <- "extraction"
+IDs$extraction <- as.character(IDs$extraction)
+IDs <- mutate(IDs, PlantID=gsub("#", "", gsub(" .*", "", sample_code)))
+
+#re-coding some weird plantIDs for silvivagum and generalense, were just labeled with date or trail marker
+IDs$PlantID[which(IDs$PlantID=="19/7/11")] <- "2"
+IDs$PlantID[which(IDs$PlantID=="14/5/10")] <- "3"
+IDs$PlantID[which(IDs$PlantID=="SSO570")] <- "1"
+IDs$PlantID[which(IDs$PlantID=="SSO630")] <- "2"
+
+IDs$PlantID[which(IDs$sample_code=="#7 5/7/12")] <- "7b"
 
 
-#replacing all values < 100 with zero.
+
+div <- full_join(peaks, IDs, by="extraction")
+div <- div[,c(1,4,1316:1319, 2,3,5:1315)]
+div[1:9]
+
+#re-coding level for "ripe seed" as just seed for ease of reference
+div$tissue <- recode(div$tissue, "ripe seed"="seed")
+
+
+
+#correcting spelling
+div$sp <- recode(div$sp, multiplinervium="multiplinervum")
+
+#making sp a factor
+div$sp <- as.factor(div$sp)
+
+#making sure all plant IDs are unique
+div$PlantID <- paste(div$sp, div$PlantID, sep="_")
+
+#making plant ID a factor
+div$PlantID <- as.factor(div$PlantID)
+
+#saving current div as the div_all version
+div_all <- div
+
+#now eliminating blank rows and replacing all values < 100 with zero.
 #This is per recommendation by Jerry that many of these values are just noise and not
 #real peaks in the chromatograms
-div <- div_all
-for (i in 5:1315){
+div <- div[which(!is.na(div$richness)),]
+for (i in 9:1319){
   d <- div[i]
   d[which(d<100),] <- 0
   div[i] <- d
 }
 
 div <- droplevels(div)
-
 
 #also droping extra samples for colonense for ripe fruit and peltatum unripe
 #where we don't have the other tissues
@@ -48,45 +85,77 @@ div <- droplevels(div)
 div <- div[which(div$PlantID !="colonense_12"),]
 div <- div[which(div$PlantID !="peltatum_1"),]
 
-
 #also will create a new variable with all fruit tissues recoded as just fruit,
 #so we can examine diversity in fruit as a whole organ in some cases
 div$tissue2 <- recode(div$tissue, ripe="frt", unripe="frt", seed="frt")
+div <- div[c(1:8, 1320, 9:1319)]
 
-
-#calculating richness
-div <- mutate(div, richness=rowSums(div[5:1315]>100))
-
-#ordering columns
-div <- div[c(1:4, 1316:1317, 5:1315)]
-
-div$sp <- as.factor(div$sp)
-div$tissue2 <- as.factor(div$tissue2)
-div$PlantID <- as.factor(div$PlantID)
-
-#read in structural similarity data, intrasample data (all compounds in a sample compared
+#structural diversity data, intrasample data (all compounds in a sample compared
 # to each other)
 
-SD <- read.csv("Data_Intrasample_Structural_Similarity.csv")
+SD <- read.csv("chem_structural_similarity_intrasample.csv")
 
-
-#similarity metric shows the chemical similarity between samples, but we would like to look at 
+#metric shows the "chemical similarity between samples, but I would like to look at 
 #diversity, so I will do 1-similarity
 SD$SD <- 1-SD$chem_similarity_internal
 
+#adding sample ID info to SD dataset
+d.temp <- IDs[,c(1,5)]
+colnames(SD)[3] <- "extraction"
+SD$extraction <- as.character(SD$extraction)
+
+SD <- full_join(SD, d.temp, by="extraction")
+
+SD <- SD[which(!is.na(SD$run_date)),]
+
+SD$species <- as.factor(SD$species)
+SD$species <- recode(SD$species, adu="aduncum", aur="auritum", bio= "biolleyi",
+                     col="colonense", gen="generalense", gla="glabrescens",
+                     mul="multiplinervum", pel="peltatum", ret="reticulatum",
+                     san="sancti-felicis", sil="silvivagum", umb="umbricola")
+
+SD$tissue <- as.factor(SD$tissue)
+SD$tissue <- factor(SD$tissue, levels=c("lf","sd", "uf", "rf"))
+
+SD$tissue <- recode(SD$tissue, lf = "leaf", sd = "seed", 
+                                      uf="unripe", rf = "ripe")
 
 
-###read in structural diversity data, intersample--overall structural composition of each sample
+
+###Structural diversity data, intersample--overall structural composition of each sample
 ##compared to all other samples in a distance matrix
 
-SD_inter <- read.csv("Data_Intersample_Structural_Similarity.csv", row.names=1)
+SD_inter <- read.csv("chem_struct_sim_piper12spp_presabs.csv")
+SD_inter <- SD_inter[,1:146] #seems like whole matrix was in there twice? Just taking the first one for now--need to check with Jerry
 
 #data are similarity scores, and I want diversity, so I will take 1-sim
-SD_inter <- 1-SD_inter
+SD_inter[2:146] <- 1-SD_inter[2:146]
 
+
+#Need to extract explanatory variables for this
+
+#species
+SD_inter <- mutate(SD_inter, species=gsub("_.*", "", X))# gsub("[a-z]*_", "", X))) 
+SD_inter$species <- recode(SD_inter$species, adu="aduncum", aur="auritum", bio= "biolleyi",
+                     col="colonense", gen="generalense", gla="glabrescens",
+                     mul="multiplinervum", pel="peltatum", ret="reticulatum",
+                     san="sancti-felicis", sil="silvivagum", umb="umbricola")
+
+#tissue
+substrRight <- function(x, n){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+SD_inter <- mutate(SD_inter, tissue=substrRight(gsub("_[0-9]*", "", X), 2))
+SD_inter$tissue <- recode(SD_inter$tissue, lf = "leaf", sd = "seed", 
+                    uf="unripe", rf = "ripe")
+
+#plantID
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 SD_inter$X <- as.character(SD_inter$X)
+=======
+>>>>>>> parent of 372a5c0... Cleaning up code and repository to get ready for publication. All older files (Scripts, data, and outputs) were moved to a separate folder (Older Stuff), which could eventually be removed. I saved new versions of the datafiles that were cleaned up a bit and merged to minimize the number of files we need to have in the repository for people to download. The older version of the master code that worked with all the old datafiles is in the Older Stuff folder and is called 'Script_DiversityAnalyses_with initial wrangling'.  Still have some more updates to go in the new master code before it is fully cleaned and ready.
 SD_inter <- mutate(SD_inter, extraction=gsub("[a-z]*_", "",substr(X, 1, nchar(X)-7)))
 
 #adding sample ID info to SD_inter dataset
@@ -99,17 +168,18 @@ SD_inter$PlantID <- paste(SD_inter$species, SD_inter$PlantID, sep="_")
 #removing col_12 and pel_1 with no other tissues
 SD_inter <- SD_inter[which(SD_inter$PlantID !="colonense_12"),]
 SD_inter <- SD_inter[which(SD_inter$PlantID !="peltatum_1"),]
+<<<<<<< HEAD
 =======
 #removing two samples, col_12 (ripe fruit) and pel_1 (unripe fruits) that are from plants with no other tissues
 >>>>>>> 372a5c0024d25dd5c10b8a394e408048935eb2b4
+=======
+>>>>>>> parent of 372a5c0... Cleaning up code and repository to get ready for publication. All older files (Scripts, data, and outputs) were moved to a separate folder (Older Stuff), which could eventually be removed. I saved new versions of the datafiles that were cleaned up a bit and merged to minimize the number of files we need to have in the repository for people to download. The older version of the master code that worked with all the old datafiles is in the Older Stuff folder and is called 'Script_DiversityAnalyses_with initial wrangling'.  Still have some more updates to go in the new master code before it is fully cleaned and ready.
 SD_inter <- SD_inter[,-which(colnames(SD_inter)=="col_rf_29_180510")]
 SD_inter <- SD_inter[,-which(colnames(SD_inter)=="pel_uf_52_180511")]
-SD_inter <- SD_inter[-which(rownames(SD_inter)=="col_rf_29_180510"),]
-SD_inter <- SD_inter[-which(rownames(SD_inter)=="pel_uf_52_180511"),]
 
 
-#this also needs to have a set of explanatory variables for some analyses
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 SD_inter <- SD_inter[, c(1, 145:148, 2:144)]
 
@@ -117,6 +187,10 @@ SD_inter <- SD_inter[, c(1, 145:148, 2:144)]
 SD_inter_expl <- data.frame(SampleID=rownames(SD_inter))
 SD_inter_expl <- left_join(SD_inter_expl, SD[1:4], by='SampleID')
 >>>>>>> 372a5c0024d25dd5c10b8a394e408048935eb2b4
+=======
+SD_inter <- SD_inter[, c(145:148, 1:144)]
+
+>>>>>>> parent of 372a5c0... Cleaning up code and repository to get ready for publication. All older files (Scripts, data, and outputs) were moved to a separate folder (Older Stuff), which could eventually be removed. I saved new versions of the datafiles that were cleaned up a bit and merged to minimize the number of files we need to have in the repository for people to download. The older version of the master code that worked with all the old datafiles is in the Older Stuff folder and is called 'Script_DiversityAnalyses_with initial wrangling'.  Still have some more updates to go in the new master code before it is fully cleaned and ready.
 
 
 
@@ -142,6 +216,18 @@ pal2 <- pal[c(1,4)]
 save.image("Workspace_PiperChem")
 
 
+#subsetting data for Oikos review
+
+d.temp <- div[which(div$sp=="reticulatum"),] #c(1,2,3,5,6, 7)]
+d.temp.SD <- SD[which(SD$species=="reticulatum"),c(3,6)]
+
+d.Pret <- full_join(d.temp, d.temp.SD, by="extraction")
+plot(d.Pret$tissue, d.Pret$SD)
+plot(d.Pret$tissue, d.Pret$richness)
+
+d.Pret <- d.Pret[-c(2,7)]
+write.csv(d.Pret, file="Oikos_Fig1_Pret_richness.csv")
+
 
 #-------------------------------------------------------------
 #  Overall PERMANOVAs to assess differences in composition across samples
@@ -149,18 +235,11 @@ save.image("Workspace_PiperChem")
 
 load("Workspace_PiperChem")
 
-d.temp <- div[-c(1:6)]
-d.temp.expl <- div[c(2:5)]
-
+d.temp <- div[-c(1:9)]
+d.temp.expl <- div[c(3,5:6)]
 m1 <- adonis2(d.temp ~ tissue*sp, strata = 'PlantID', data = d.temp.expl, method = "bray", binary=TRUE, permutations = 999)
 m1
 #strong effects of tissue, species, and their interaction
-
-## Note, in newest version of vegan strata is deprecated, so you need to set up using permutations argument
-#perm <- how(nperm = 999)
-#setBlocks(perm) <- with(d.temp.expl, PlantID)
-#m1 <- adonis2(d.temp ~ tissue*sp, data = d.temp.expl, method = "bray", binary=TRUE, permutations = perm)
-
 
 
 #Trying a pairwise adonis to assess pairwise differences among factor levels
@@ -244,13 +323,30 @@ m1.pw
 #strong interactions with species
 
 
+#checking that the pairwise.adonis function is doing what I think it is doing
+d.temp <- div[div$tissue %in% c("seed", "unripe"),-c(1:9)]
+d.temp.expl <- div[div$tissue %in% c("seed", "unripe"), c(3,5:6)]
+m <- adonis2(d.temp ~ tissue*sp, strata='PlantID', data=d.temp.expl, 
+             method="bray", binary=TRUE)
+m
 
-#now we will split by species and look for tissue level differences for each species
-#for these we cannot do the pairwise contrasts between each pair of tissue types because once we 
-#get to that level with N=3 per species and strata = plantID, there are only 9 possible permutations,
-#so the minimum p is 0.1
+#The F-stats are the same as the pairwise.adonis but the p-values are 
+#different so I think there is definitely some p-value correction here, 
+#but I am not sure what it is in the pairwise.adonis2 function. 
+#With pairwise.adonis you can specify
+#the p-value correction term but it does not accept interactions or strata
 
-adonis.byspecies <- data.frame(sp=character(), Fstat=numeric(), P=numeric())
+
+
+#now trying to split by species and look for tissue level differences
+adonis.byspecies <- data.frame(sp=character(), Fstat=numeric(), P=numeric(), 
+                        leaf.vs.seed.F=numeric(), leaf.vs.seed.P=numeric(),
+                        leaf.vs.unripe.F=numeric(), leaf.vs.unripe.P=numeric(),
+                        leaf.vs.ripe.F=numeric(), leaf.vs.ripe.P=numeric(),
+                        seed.vs.unripe.F=numeric(), seed.vs.unripe.P=numeric(),
+                        seed.vs.ripe.F=numeric(), seed.vs.ripe.P=numeric(),
+                        unripe.vs.ripe.F=numeric(), unripe.vs.ripe.P=numeric())
+
 
 for(i in 1: length(levels(div$sp))){
   sp <- levels(div$sp)[i]
@@ -261,12 +357,75 @@ for(i in 1: length(levels(div$sp))){
                method="bray", binary=TRUE)
   Fstat <- m$F[1]
   P <- m$`Pr(>F)`[1]
-  newrow <- data.frame(sp=as.character(sp), Fstat=as.numeric(Fstat), P=as.numeric(P))
+  m.pw <- pairwise.adonis2(d.temp ~ tissue, data = d.temp.expl, 
+                           method = "bray", binary=TRUE)
+  F.l.s <- m.pw$leaf_vs_seed$F.Model[1]
+  P.l.s <- m.pw$leaf_vs_seed$`Pr(>F)`[1]
+  F.l.u <- m.pw$leaf_vs_unripe$F.Model[1]
+  P.l.u <- m.pw$leaf_vs_unripe$`Pr(>F)`[1]
+  F.l.r <- m.pw$leaf_vs_ripe$F.Model[1]
+  P.l.r <- m.pw$leaf_vs_ripe$`Pr(>F)`[1]
+  F.s.u <- m.pw$unripe_vs_seed$F.Model[1]
+  P.s.u <- m.pw$unripe_vs_seed$`Pr(>F)`[1]
+  F.s.r <- m.pw$ripe_vs_seed$F.Model[1]
+  P.s.r <- m.pw$ripe_vs_seed$`Pr(>F)`[1]
+  F.u.r <- m.pw$ripe_vs_unripe$F.Model[1]
+  P.u.r <- m.pw$ripe_vs_unripe$`Pr(>F)`[1]
+  newrow <- data.frame(sp=as.character(sp), Fstat=as.numeric(Fstat), P=as.numeric(P), 
+                       leaf.vs.seed.F=as.numeric(F.l.s), leaf.vs.seed.P=as.numeric(P.l.s),
+                       leaf.vs.unripe.F=as.numeric(F.l.u), leaf.vs.unripe.P=as.numeric(P.l.u),
+                       leaf.vs.ripe.F=as.numeric(F.l.r), leaf.vs.ripe.P=as.numeric(P.l.r),
+                       seed.vs.unripe.F=as.numeric(F.s.u), seed.vs.unripe.P=as.numeric(P.s.u),
+                       seed.vs.ripe.F=as.numeric(F.s.r), seed.vs.ripe.P=as.numeric(P.s.r),
+                       unripe.vs.ripe.F=as.numeric(F.u.r), unripe.vs.ripe.P=as.numeric(P.u.r))
   adonis.byspecies <- rbind(adonis.byspecies, newrow)
 }
 
 
-#always see an overall effect of tissue
+
+#Basically, we always see an overall effect of tissue, but 
+#never any significant pairwise contrasts. Once we get down to that level
+#we just have N=3, so I just think that we do not have the sample size to do 
+#PERMANOVAs on these very small subsets...we are getting warnings that 
+#Set of permutations < 'minperm'. Generating entire set.
+#'nperm' >= set of all permutations: complete enumeration.
+
+#The minimum p-value for a PERMANOVA is determined by the number
+#of permutations, e.g. for nperm=999 the minimum is p=0.001, which
+#means that the differences between groups could not be replicated
+#in any of the 999 permutations
+
+#So with N=3 and strata = plantID, I think we only have 9 permutations,
+#so the minimum p is 0.1
+
+#I think we can just report the overall effects of tissue for the individual
+#species
+
+
+
+#can also try this with the lmPerm package
+
+#calculate the distance matrix
+w <- vegdist(d.temp, binary=TRUE, method="bray")
+plot(w)
+w <- as.matrix(w)
+
+
+d.temp.dist <- data.frame(w=w[lower.tri(w)], tissue=NA, sp=NA )
+t.vs.t <- expand.grid(d.temp.expl$tissue, d.temp.expl$tissue)
+t <- t.vs.t[lower.tri(w),]
+d.temp.dist$tissue <- paste(t[,1], t[,2], sep=".vs.")
+sp.vs.sp <- expand.grid(d.temp.expl$sp, d.temp.expl$sp)
+sp <- sp.vs.sp[lower.tri(w),]
+d.temp.dist$sp <- paste(sp[,1], sp[,2], sep=".vs.")
+d.temp.dist$tissue <- as.factor(d.temp.dist$tissue)
+d.temp.dist$sp <- as.factor(d.temp.dist$sp)
+
+
+#PERMANOVA model
+m1 <- aovp(w ~ tissue*sp, data = d.temp.dist, maxIter = 10000, perm = "Prob")
+summary(m1)
+TukeyHSD(m1)
 
 
 
@@ -275,8 +434,8 @@ for(i in 1: length(levels(div$sp))){
 ##Now trying a PERMANOVA on the structural data
 
 #in this case, we feed adonis2 our own distance matrix rather than the dataframe
-d.temp <- as.dist(SD_inter)
-d.temp.expl <- SD_inter_expl
+d.temp <- as.dist(SD_inter[,6:148])
+d.temp.expl <- SD_inter[,c(1:5)]
 m2 <- adonis2(d.temp ~ tissue*species, strata='PlantID', data = d.temp.expl, permutations = 999)
 m2
 plot(d.temp)
@@ -287,7 +446,13 @@ m2.pw
 
 
 #now trying to split by species and look for tissue level differences
-adonis.byspecies.SD <- data.frame(sp=character(), Fstat=numeric(), P=numeric())
+adonis.byspecies.SD <- data.frame(sp=character(), Fstat=numeric(), P=numeric(), 
+                               leaf.vs.seed.F=numeric(), leaf.vs.seed.P=numeric(),
+                               leaf.vs.unripe.F=numeric(), leaf.vs.unripe.P=numeric(),
+                               leaf.vs.ripe.F=numeric(), leaf.vs.ripe.P=numeric(),
+                               seed.vs.unripe.F=numeric(), seed.vs.unripe.P=numeric(),
+                               seed.vs.ripe.F=numeric(), seed.vs.ripe.P=numeric(),
+                               unripe.vs.ripe.F=numeric(), unripe.vs.ripe.P=numeric())
 
 
 for(i in 1: length(levels(div$sp))){
@@ -299,7 +464,27 @@ for(i in 1: length(levels(div$sp))){
                method="bray", binary=TRUE)
   Fstat <- m$F[1]
   P <- m$`Pr(>F)`[1]
-  newrow <- data.frame(sp=as.character(sp), Fstat=as.numeric(Fstat), P=as.numeric(P))
+  m.pw <- pairwise.adonis2(d.temp ~ tissue, data = d.temp.expl, 
+                           method = "bray", binary=TRUE)
+  F.l.s <- m.pw$leaf_vs_seed$F.Model[1]
+  P.l.s <- m.pw$leaf_vs_seed$`Pr(>F)`[1]
+  F.l.u <- m.pw$leaf_vs_unripe$F.Model[1]
+  P.l.u <- m.pw$leaf_vs_unripe$`Pr(>F)`[1]
+  F.l.r <- m.pw$leaf_vs_ripe$F.Model[1]
+  P.l.r <- m.pw$leaf_vs_ripe$`Pr(>F)`[1]
+  F.s.u <- m.pw$unripe_vs_seed$F.Model[1]
+  P.s.u <- m.pw$unripe_vs_seed$`Pr(>F)`[1]
+  F.s.r <- m.pw$ripe_vs_seed$F.Model[1]
+  P.s.r <- m.pw$ripe_vs_seed$`Pr(>F)`[1]
+  F.u.r <- m.pw$ripe_vs_unripe$F.Model[1]
+  P.u.r <- m.pw$ripe_vs_unripe$`Pr(>F)`[1]
+  newrow <- data.frame(sp=as.character(sp), Fstat=as.numeric(Fstat), P=as.numeric(P), 
+                       leaf.vs.seed.F=as.numeric(F.l.s), leaf.vs.seed.P=as.numeric(P.l.s),
+                       leaf.vs.unripe.F=as.numeric(F.l.u), leaf.vs.unripe.P=as.numeric(P.l.u),
+                       leaf.vs.ripe.F=as.numeric(F.l.r), leaf.vs.ripe.P=as.numeric(P.l.r),
+                       seed.vs.unripe.F=as.numeric(F.s.u), seed.vs.unripe.P=as.numeric(P.s.u),
+                       seed.vs.ripe.F=as.numeric(F.s.r), seed.vs.ripe.P=as.numeric(P.s.r),
+                       unripe.vs.ripe.F=as.numeric(F.u.r), unripe.vs.ripe.P=as.numeric(P.u.r))
   adonis.byspecies.SD <- rbind(adonis.byspecies.SD, newrow)
 }
 
@@ -308,7 +493,7 @@ for(i in 1: length(levels(div$sp))){
 
 tbl <- cbind(adonis.byspecies[1:3], adonis.byspecies.SD[2:3])
 
-write.csv(tbl, file="./Outputs/Table2_adonis.byspecies.csv")
+write.csv(tbl, file="adonis.byspecies.csv")
 
 
 
@@ -329,16 +514,16 @@ load("Workspace_PiperChem")
 
 
 levels(div$tissue)
-d <- div[which(div$tissue=="leaf"),7:1317]
+d <- div[which(div$tissue=="leaf"),10:1320]
 lf <- colnames(d)[which(colSums(d) !=0)]
 
-d <- div[which(div$tissue=="ripe"),7:1317]
+d <- div[which(div$tissue=="ripe"),10:1320]
 r <- colnames(d)[which(colSums(d) !=0)]
 
-d <- div[which(div$tissue=="seed"),7:1317]
+d <- div[which(div$tissue=="seed"),10:1320]
 s <- colnames(d)[which(colSums(d) !=0)]
 
-d <- div[which(div$tissue=="unripe"),7:1317]
+d <- div[which(div$tissue=="unripe"),10:1320]
 u <- colnames(d)[which(colSums(d) !=0)]
 
 x <- list(lf, s, u, r)
@@ -351,7 +536,7 @@ overlap <- calculate.overlap(x)
 
 #use this to double check groupings...can see data for a particular compund and which
 #tissues it was found in
-div[,c("tissue","X577.1393_3.1992")]
+div[,c("tissue","577.1393_3.1992")]
 
 all <- length(overlap$a6)
 l.u.s <- length(overlap$a12)
@@ -377,6 +562,7 @@ library(svglite)
 
 palVenn <- pal[c(1,4,2,3)]
 <<<<<<< HEAD
+<<<<<<< HEAD
 #png(height=500, width=500, filename="Venn.tiff", type="cairo")
 #tiff(height=500, width=500, filename="Venn.tiff", type="cairo")
 #cairo_pdf(height=7, width=7, filename="Venn.pdf")
@@ -388,6 +574,12 @@ png(height=500, width=500, filename="./Outputs/Fig1_Venn.tiff", type="cairo")
 #cairo_pdf(height=7, width=7, filename="./Outputs/Fig1_Venn.pdf")
 #cairo_ps(height=7, width=7, filename="./Outputs/Fig1_Venn.eps")
 >>>>>>> 372a5c0024d25dd5c10b8a394e408048935eb2b4
+=======
+png(height=500, width=500, filename="Venn.tiff", type="cairo")
+#tiff(height=500, width=500, filename="Venn.tiff", type="cairo")
+#cairo_pdf(height=7, width=7, filename="Venn.pdf")
+#cairo_ps(height=7, width=7, filename="Venn.eps")
+>>>>>>> parent of 372a5c0... Cleaning up code and repository to get ready for publication. All older files (Scripts, data, and outputs) were moved to a separate folder (Older Stuff), which could eventually be removed. I saved new versions of the datafiles that were cleaned up a bit and merged to minimize the number of files we need to have in the repository for people to download. The older version of the master code that worked with all the old datafiles is in the Older Stuff folder and is called 'Script_DiversityAnalyses_with initial wrangling'.  Still have some more updates to go in the new master code before it is fully cleaned and ready.
 venn <- draw.quad.venn(length(lf), length(r), length(s), length(u), length(intersect(lf, r)),
                        length(intersect(lf, s)),length(intersect(lf, u)),length(intersect(r,s)),
                        length(intersect(r,u)),length(intersect(s,u)), 
@@ -450,6 +642,7 @@ dev.off()
 
 #Use for debugging function:
 <<<<<<< HEAD
+<<<<<<< HEAD
 compounds <- d.temp
 meta <- m.temp
 reps <- 10
@@ -462,6 +655,13 @@ mod=c("arrhenius","gitay","lomolino","asymp",
 #mod=c("arrhenius","gitay","lomolino","asymp", 
 #           "gompertz", "logis")
 >>>>>>> 372a5c0024d25dd5c10b8a394e408048935eb2b4
+=======
+compounds <- d.temp
+meta <- m.temp
+reps <- 100
+mod=c("arrhenius","gitay","lomolino","asymp", 
+           "gompertz", "logis")
+>>>>>>> parent of 372a5c0... Cleaning up code and repository to get ready for publication. All older files (Scripts, data, and outputs) were moved to a separate folder (Older Stuff), which could eventually be removed. I saved new versions of the datafiles that were cleaned up a bit and merged to minimize the number of files we need to have in the repository for people to download. The older version of the master code that worked with all the old datafiles is in the Older Stuff folder and is called 'Script_DiversityAnalyses_with initial wrangling'.  Still have some more updates to go in the new master code before it is fully cleaned and ready.
       
 
 CPR <- function(compounds, meta, reps=100, mod=c("arrhenius","gitay","lomolino","asymp", 
@@ -565,12 +765,17 @@ allAIC <- data.frame(tiss=factor(levels=levels(div$tissue)),
 for(i in 1:length(levels(div$tissue))){
   tiss <- levels(div$tissue)[i]
 <<<<<<< HEAD
+<<<<<<< HEAD
   d.temp <- div[which(div$tissue==tiss), -c(1:9)]
   m.temp <- div[which(div$tissue==tiss), c(1,3)]
   CPR_out <- CPR(d.temp, m.temp, reps=10) 
 =======
   d.temp <- div[which(div$tissue==tiss), -c(1:6)]
   m.temp <- div[which(div$tissue==tiss), c(1,4)]
+=======
+  d.temp <- div[which(div$tissue==tiss), -c(1:9)]
+  m.temp <- div[which(div$tissue==tiss), c(1,3)]
+>>>>>>> parent of 372a5c0... Cleaning up code and repository to get ready for publication. All older files (Scripts, data, and outputs) were moved to a separate folder (Older Stuff), which could eventually be removed. I saved new versions of the datafiles that were cleaned up a bit and merged to minimize the number of files we need to have in the repository for people to download. The older version of the master code that worked with all the old datafiles is in the Older Stuff folder and is called 'Script_DiversityAnalyses_with initial wrangling'.  Still have some more updates to go in the new master code before it is fully cleaned and ready.
   CPR_out <- CPR(d.temp, m.temp, reps=500) 
 >>>>>>> 372a5c0024d25dd5c10b8a394e408048935eb2b4
   curves <- CPR_out[[3]]
@@ -632,7 +837,7 @@ allAIC
 asymp.finalest <- allCoefEst[which(allCoefEst$model_type=="asymp" & allCoefEst$parameter=="Asym"),]
 asymp.finalest
 #save these for table
-write.csv(asymp.finalest, file="./Outputs/Table3_gammaestimates.csv")
+write.csv(asymp.finalest, file="gammaestimates.csv")
 
 #leaf is lower than all other fruit tissues, 95% CIs do not cross. 
 
@@ -658,11 +863,15 @@ p2
 #ggsave("Rarefaction.png", width = 8, height = 6.5, units = "cm")
 #ggsave("Rarefaction.eps", width = 8, height = 6.5, units = "cm", device=cairo_ps)
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 ggsave("Rarefaction2.pdf", width = 8, height = 6.5, units = "cm", device = cairo_pdf)
 >>>>>>> 372a5c0024d25dd5c10b8a394e408048935eb2b4
 
 #ggsave("Rarefaction.pdf", width = 8, height = 6.5, units = "cm", device = cairo_pdf)
+=======
+ggsave("Rarefaction.pdf", width = 8, height = 6.5, units = "cm", device = cairo_pdf)
+>>>>>>> parent of 372a5c0... Cleaning up code and repository to get ready for publication. All older files (Scripts, data, and outputs) were moved to a separate folder (Older Stuff), which could eventually be removed. I saved new versions of the datafiles that were cleaned up a bit and merged to minimize the number of files we need to have in the repository for people to download. The older version of the master code that worked with all the old datafiles is in the Older Stuff folder and is called 'Script_DiversityAnalyses_with initial wrangling'.  Still have some more updates to go in the new master code before it is fully cleaned and ready.
 
 ggsave("Rarefaction.svg", width=7, height=7, units="cm")
 
