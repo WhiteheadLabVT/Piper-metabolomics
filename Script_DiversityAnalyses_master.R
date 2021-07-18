@@ -418,11 +418,14 @@ dev.off()
 #for "sample effort"; currently this is not implemented in the function
 
 #Use for debugging function:
-#compounds <- d.temp
-#meta <- m.temp
-#reps <- 100
-#mod=c("arrhenius","gitay","lomolino","asymp", 
-#           "gompertz", "logis")
+
+d.temp <- div[which(div$tissue=="leaf"), -c(1:6)]
+m.temp <- div[which(div$tissue=="leaf"), c(1,4)]
+compounds <- d.temp
+meta <- m.temp
+reps <- 100
+mod=c("arrhenius","gitay","lomolino","asymp", 
+           "gompertz", "logis")
       
 
 CPR <- function(compounds, meta, reps=100, mod=c("arrhenius","gitay","lomolino","asymp", 
@@ -493,7 +496,7 @@ CPR <- function(compounds, meta, reps=100, mod=c("arrhenius","gitay","lomolino",
     d.temp2 <- d.temp[1:ncol(d.temp)-1]
     m.temp <- d.temp2 %>%
       summarise_all(list(mean=mean, SE=se, CI.high=ci.high, CI.low=ci.low), na.rm=TRUE) %>%
-      pivot_longer(cols=ends_with(c("mean", "SE", "high", "low"))) %>%
+      pivot_longer(cols=everything()) %>% 
       separate (name, into = c("parameter", "sum_stat"), sep = "_" ) %>%
       pivot_wider(names_from=sum_stat, values_from=value)
     m.temp <- as.data.frame(m.temp)
