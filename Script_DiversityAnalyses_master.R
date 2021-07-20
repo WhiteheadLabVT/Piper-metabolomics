@@ -1,6 +1,6 @@
-#On 06/02 made it through cleaning/updating code through rarefaction, but something is going weird in the rarefaction 
-# and it does not seem to be doing to constrained part (curves are too perfectly smooth). Need to figure that
-# out and go back to the previous version to compare
+#On 07/20 finished debugging rarefaction, looks similar to before but still 
+#should re-run with 5000 bootstraps and update numbers in paper to match what
+#is saved as outputs in repository
 
 
 
@@ -418,14 +418,11 @@ dev.off()
 #for "sample effort"; currently this is not implemented in the function
 
 #Use for debugging function:
-
-d.temp <- div[which(div$tissue=="leaf"), -c(1:6)]
-m.temp <- div[which(div$tissue=="leaf"), c(1,4)]
-compounds <- d.temp
-meta <- m.temp
-reps <- 100
-mod=c("arrhenius","gitay","lomolino","asymp", 
-           "gompertz", "logis")
+#compounds <- div[which(div$tissue=="leaf"), -c(1:6)]
+#meta <- div[which(div$tissue=="leaf"), c(1,2)]
+#reps <- 100
+#mod=c("arrhenius","gitay","lomolino","asymp", 
+ #          "gompertz", "logis")
       
 
 CPR <- function(compounds, meta, reps=100, mod=c("arrhenius","gitay","lomolino","asymp", 
@@ -528,7 +525,7 @@ allAIC <- data.frame(tiss=factor(levels=levels(div$tissue)),
 for(i in 1:length(levels(div$tissue))){
   tiss <- levels(div$tissue)[i]
   d.temp <- div[which(div$tissue==tiss), -c(1:6)]
-  m.temp <- div[which(div$tissue==tiss), c(1,4)]
+  m.temp <- div[which(div$tissue==tiss), c(1,2)]
   CPR_out <- CPR(d.temp, m.temp, reps=500) 
   curves <- CPR_out[[3]]
   curves$tiss <- tiss
@@ -578,12 +575,9 @@ p <- ggplot(data=allCurves) +
   ylim(0, 1400)
 p
 
-#ggsave("Rarefaction.png", width = 8, height = 6.5, units = "cm")
-#ggsave("Rarefaction.eps", width = 8, height = 6.5, units = "cm", device=cairo_ps)
-ggsave("Rarefaction2.pdf", width = 8, height = 6.5, units = "cm", device = cairo_pdf)
-
-
-
+ggsave("./Outputs/Figure1_Rarefaction.png", width = 8, height = 6.5, units = "cm")
+ggsave("./Outputs/Figure1_Rarefaction.eps", width = 8, height = 6.5, units = "cm", device=cairo_ps)
+ggsave("./Outputs/Figure1_Rarefaction.pdf", width = 8, height = 6.5, units = "cm", device = cairo_pdf)
 
 
 #-------------------------------------------------------------------
@@ -595,9 +589,6 @@ load("Workspace_PiperChem")
 
 
 hist(div$richness)
-hist(div$richness_all)
-div <- div[which(!is.na(div$richness)),]
-div <- droplevels(div)
 
 plot(richness ~ tissue, data=div)
 plot(richness ~ sp, data=div)
@@ -636,7 +627,7 @@ for(i in 1: length(levels(div$sp))){
   lmm.byspecies <- rbind(lmm.byspecies, newrow)
 }
 
-#Some boundary, singular fit errors. These all go away when you run this as a simple lm
+#Some boundary, singular fit warnings. These all go away when you run this as a simple lm
 #without the plantID random effect. However, plantID explains a large portion of the 
 #variance for many of the models
 
@@ -717,63 +708,9 @@ p <- ggplot(div, aes(tissue, richness, fill=tissue)) +
 p
 
 
-ggsave("Alphadiv.png", width = 15, height = 15, units = "cm")
-ggsave("Alphadiv.eps", width = 15, height = 15, units = "cm", device=cairo_ps)
-ggsave("Alphadiv.pdf", width = 15, height = 15, units = "cm", device = cairo_pdf)
-
-
-
-
-#alternative plot
-
-lines <- data.frame(lines=c(1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5))
-
-xlab <- substitute(paste(italic('Piper'), " species"))
-
-TukeyLab <- data.frame(sp=character(), tissue=character(),x=character(), max=numeric())
-for (i in 1:length(levels(div$sp))) {
-  sp <- levels(div$sp)[i]
-  for(j in 1:length(levels(div$tissue))){
-    t <- levels(div$tissue)[j]
-    newrow <- data.frame(sp=sp, tissue=t, lab=lmm.byspecies[which(lmm.byspecies$sp==sp),
-                                                            which(colnames(lmm.byspecies)==t)],
-                         max=max(div$richness[which(div$sp==sp & div$tissue==t)]))
-    TukeyLab <- rbind(TukeyLab, newrow)
-  }
-}
-
-TukeyLab2 <- TukeyLab[-c(9:12,29:32),]
-
-ypos_lab <- TukeyLab2$max + 60 
-xpos_lab <- c(0.7, 0.9, 1.1, 1.3, 
-              1.7, 1.9, 2.1, 2.3,
-              #2.7, 2.9, 3.1, 3.3,
-              3.7, 3.9, 4.1, 4.3,
-              4.7, 4.9, 5.1, 5.3,
-              5.7, 5.9, 6.1, 6.3,
-              6.7, 6.9, 7.1, 7.3,
-              #7.7, 7.9, 8.1, 8.3,
-              8.7, 8.9, 9.1, 9.3,
-              9.7, 9.9, 10.1, 10.3,
-              10.7, 10.9, 11.1, 11.3,
-              11.7, 11.9, 12.1, 12.3)
-
-p <- ggplot(div, aes(sp, richness, fill=tissue)) + 
-  geom_boxplot() +
-  labs(x=xlab, y="Compound Richness") +
-  scale_fill_manual(values=pal, aesthetics = "fill") +
-  geom_vline(data = lines, aes(xintercept = as.numeric(lines)), lty="dotted") +
-  annotate("text", x = xpos_lab, y = ypos_lab, label = TukeyLab2$lab, size=3) +
-  theme_classic() +
-  theme(legend.title=element_blank(),
-        axis.text.x = element_text(angle = 45, vjust=0.65))
-p
-ggsave("Alphadiv2.png", width = 25, height = 10, units = "cm")
-#ggsave("Alphadiv2.eps", width = 30, height = 7, units = "cm", device=cairo_ps)
-#ggsave("Alphadiv2.pdf", width = 30, height = 7, units = "cm", device = cairo_pdf)
-
-
-
+ggsave("./Outputs/Figure4_Alphadiv.png", width = 15, height = 15, units = "cm")
+ggsave("./Outputs/Figure4_Alphadiv.eps", width = 15, height = 15, units = "cm", device=cairo_ps)
+ggsave("./Outputs/Figure4_Alphadiv.pdf", width = 15, height = 15, units = "cm", device = cairo_pdf)
 
 
 #-----------------------------------------------------------------
@@ -782,7 +719,11 @@ ggsave("Alphadiv2.png", width = 25, height = 10, units = "cm")
 
 load("Workspace_PiperChem")
 
-d.temp <- div[-c(1:9)]
+#chemical composition-----------
+#First looking at beta-diversity (i.e. sample-to-sample variance) 
+#in chemical composition, based on compound presence/absence
+
+d.temp <- div[-c(1:6)]
 
 #first calculating the pairwise distances for all samples
 #this would be the same as betadiver(d.temp, "w")
@@ -814,12 +755,9 @@ TukeyHSD(wb2)
 boxplot(wb2)
 
 
-
-
-#Data for plot plot
+#Data for plot
 beta.div <- data.frame(tissue=wb$group, beta.div=wb$distances)
 beta.div$tissue <- factor(beta.div$tissue, levels=c("leaf","seed", "unripe", "ripe"))
-
 
 
 #can also look at differences for species
@@ -827,19 +765,18 @@ wb_sp <- betadisper(w, div$sp)
 anova(wb_sp)
 TukeyHSD(wb_sp)
 boxplot(wb_sp)
-#main difference is that generalense seems to have higher beta-diversity
+#generalense seems to have higher beta-diversity
 #than other species. Note all the tissues are in there, so this probably is driven
 #by major differences among tissues
 
 
-##in the dataset above, all samples are together, so the beta-div
-#in fruits might be due to within species variance in addition
-#to across species variance. Two things to do: 1) look at beta
-#diversity on species averages (for across species variance); 2) look at beta div for each
-#species separately (to see if there is within species variance)
+##there are effects of tissue, and effects of species, but we can't include
+#two factors simultaneously in betadisper. So for the differences in 
+#beta-diversity across tissues above, this might be due to within species 
+#variance in addition to across species variance. 
 
+#We could look at beta-diversity across tissues with the species averaged first
 
-#with the species averaged first
 div_SpAvg <- div %>%
   group_by(sp, tissue, tissue2) %>%
   summarize_if(is.numeric, max)
@@ -847,93 +784,44 @@ div_SpAvg <- div %>%
 d.temp <- div_SpAvg[-c(1:5)]
 w <- vegdist(d.temp, binary=TRUE, method="bray")
 plot(w)
-
-#then we can look at the distances between each sample and the group centroid
-#but we need to define a specific group (e.g. tissue)
 wb <- betadisper(w, div_SpAvg$tissue)
 anova(wb)
 TukeyHSD(wb)
 boxplot(wb)
 #same trend but not significant, likely because our sample size is only 12 now
+#I also do not like this because it is ignoring an important scale of 
+#variation (within-species) for beta diversity
 
 
-#now trying to split by species
-beta.byspecies <- data.frame(sp=character(), Fstat=numeric(), P=numeric(), leaf=character(), 
-                             seed=character(), unripe=character(), ripe=character())
-
-for(i in 1: length(levels(div$sp))){
-  sp <- levels(div$sp)[i]
-  d <- div[which(div$sp==sp),]
-  d2 <- d[-c(1:9)]
-  w <- vegdist(d2, binary=TRUE, method="bray")
-  wb <- betadisper(w, d$tissue)
-  d3 <- data.frame(tissue=wb$group, beta.div=wb$distances)
-  m <- aov(beta.div ~ tissue, data=d3)
-  Fstat <- summary(m)[[1]][1,4]
-  P <- summary(m)[[1]][1,5]
-  t <- cld(glht(m, mcp(tissue="Tukey")))
-  l <- t$mcletters$Letters
-  newrow <- data.frame(sp=as.character(sp), Fstat=as.numeric(Fstat), P=as.numeric(P), 
-                       leaf=as.character(l[1]), seed=as.character(l[2]), 
-                       unripe=as.character(l[3]), ripe=as.character(l[4]))
-  beta.byspecies <- rbind(beta.byspecies, newrow)
-}
-
-#there is only one case where there are significant differences in 
-#beta diversity across tissues within a species, that is for colonense
-#Is this due to very low sample size (n=3 samples per tissue per species)? Or is it that 
-#the main tissue beta-diversity effects are driven by species
-#level differences (i.e. fruits of species A are very different from species B, etc)
-
-#I am still struggling with the fact that just doing tissue ignores
-#this important factor in the dataset (species) and maybe would
-#be like psuedoreplication??  and you can't do two factors
-#simultaneously in betadisper
-
-#solution suggested here is to do the two-factor adonis with interaction, and if 
-#there is no interaction, to just interpret each factor individually in
-#betadisper
-#https://stat.ethz.ch/pipermail/r-sig-ecology/2010-September/001524.html
-
-d.temp <- div[-c(1:9, 50:1311)]
-d.temp.expl <- div[c(3,5)]
-w <- vegdist(d.temp, binary=TRUE, method="bray")
-wb <- adonis2(d.temp ~ tissue*sp, data=d.temp.expl)
-wb
-
-#There is a strong interaction here between tissue and species, so that doesn't really work. 
-
-
-
-##Also just found this paper:
+##In this paper:
 #Anderson, Marti J. (2014) "Permutational multivariate analysis of variance (PERMANOVA)."
-#See Table 2 and Fig. 4 in that paper...they show an example where PERMANOVA is used to
-#partition the variance in multivariate composition among different spatial scales
-#something like this would be perfect, to show both the within species and across species
+#See Table 2 and Fig. 4...they show an example where PERMANOVA is used to
+#partition the variance in multivariate composition among different spatial 
+#scales. Following this model, we can show both the within species and across species
 #components of variation
 
 ## Using adonis to quantify the contribution of species to tissue-level variance
 # subset data by tissue and run adonis with species as the independent variable
 # Use Sum of Squares of residuals = SSE to calculate sigma^2 = SSE/(n-v)
 
-d.temp <- div[which(div$tissue=="leaf"), -c(1:9)]
-d.temp.expl <- div[which(div$tissue=="leaf"), c(3,5)]
+d.temp <- div[which(div$tissue=="leaf"), -c(1:6)]
+d.temp.expl <- div[which(div$tissue=="leaf"), c(2,4)]
 adonis_leaf <- adonis2(d.temp ~ sp, strata='PlantID', data = d.temp.expl, method = "bray", permutations = 999)
 adonis_leaf
 
 
-d.temp <- div[which(div$tissue=="ripe"), -c(1:9)]
-d.temp.expl <- div[which(div$tissue=="ripe"), c(3,5)]
+d.temp <- div[which(div$tissue=="ripe"), -c(1:6)]
+d.temp.expl <- div[which(div$tissue=="ripe"), c(2,4)]
 adonis_ripe <- adonis2(d.temp ~ sp, strata='PlantID', data = d.temp.expl, method = "bray", permutations = 999)
 adonis_ripe
 
-d.temp <- div[which(div$tissue=="unripe"), -c(1:9)]
-d.temp.expl <- div[which(div$tissue=="unripe"), c(3,5)]
+d.temp <- div[which(div$tissue=="unripe"), -c(1:6)]
+d.temp.expl <- div[which(div$tissue=="unripe"), c(2,4)]
 adonis_unripe <- adonis2(d.temp ~ sp, strata='PlantID', data = d.temp.expl, method = "bray", permutations = 999)
 adonis_unripe
 
-d.temp <- div[which(div$tissue=="seed"), -c(1:9)]
-d.temp.expl <- div[which(div$tissue=="seed"), c(3,5)]
+d.temp <- div[which(div$tissue=="seed"), -c(1:6)]
+d.temp.expl <- div[which(div$tissue=="seed"), c(2,4)]
 adonis_seed <- adonis2(d.temp ~ sp, strata='PlantID', data = d.temp.expl, method = "bray", permutations = 999)
 adonis_seed
 
@@ -966,19 +854,22 @@ prop.variance <- rbind(prop.variance, data.frame(
   prop.var.resid=adonis_ripe$SumOfSqs[2]/adonis_ripe$SumOfSqs[3]
 ))
 
+prop.variance
+#"prop.var.sp" shows the proportion of variance explained by species
+#"prop.var.resid" shows the proportion of variance explained by
+#individual sample within species
 
+#structural composition-----------
+#Now looking at structural beta-diversity (i.e. sample-to-sample variance) 
+#in structural composition, based on intersample distances in structural 
+#similarity cosine scores
 
-
-
-##Now trying a beta-diversity analysis on the structural data--so this is something 
-#like "structural beta diversity"
-
-d.temp <- as.dist(SD_inter[,6:148])
+d.temp <- as.dist(SD_inter)
 plot(d.temp)
 
 #then we can look at the distances between each sample and the group centroid
 #but we need to define a specific group (e.g. tissue)
-wb <- betadisper(d.temp, SD_inter$tissue)
+wb <- betadisper(d.temp, SD_inter_expl$tissue)
 permutest(wb)
 TukeyHSD(wb)
 boxplot(wb)
@@ -994,28 +885,28 @@ s.beta.div$tissue <- factor(s.beta.div$tissue, levels=c("leaf","seed", "unripe",
 # subset data by tissue and run adonis with species as the independent variable
 # Use Sum of Squares of residuals = SSE to calculate sigma^2 = SSE/(n-v)
 
-d.temp <- as.dist(SD_inter[which(SD_inter$tissue=="leaf"), 
-                           which(grepl("lf" , colnames(SD_inter)))  ])
-d.temp.expl <- SD_inter[which(SD_inter$tissue=="leaf"), c(1:5)]
+d.temp <- as.dist(SD_inter[which(SD_inter_expl$tissue=="leaf"), 
+                           which(SD_inter_expl$tissue=="leaf")])
+d.temp.expl <- SD_inter_expl[which(SD_inter_expl$tissue=="leaf"),]
 adonis_leaf <- adonis2(d.temp ~ species, strata='PlantID', data = d.temp.expl, method = "bray", permutations = 999)
 adonis_leaf
 
 
-d.temp <- as.dist(SD_inter[which(SD_inter$tissue=="seed"), 
-                           which(grepl("sd" , colnames(SD_inter)))  ])
-d.temp.expl <- SD_inter[which(SD_inter$tissue=="seed"), c(1:5)]
+d.temp <- as.dist(SD_inter[which(SD_inter_expl$tissue=="seed"), 
+                           which(SD_inter_expl$tissue=="seed")])
+d.temp.expl <- SD_inter_expl[which(SD_inter_expl$tissue=="seed"),]
 adonis_seed <- adonis2(d.temp ~ species, strata='PlantID', data = d.temp.expl, method = "bray", permutations = 999)
 adonis_seed
 
-d.temp <- as.dist(SD_inter[which(SD_inter$tissue=="unripe"), 
-                           which(grepl("uf" , colnames(SD_inter)))  ])
-d.temp.expl <- SD_inter[which(SD_inter$tissue=="unripe"), c(1:5)]
+d.temp <- as.dist(SD_inter[which(SD_inter_expl$tissue=="unripe"), 
+                           which(SD_inter_expl$tissue=="unripe")])
+d.temp.expl <- SD_inter_expl[which(SD_inter_expl$tissue=="unripe"),]
 adonis_unripe <- adonis2(d.temp ~ species, strata='PlantID', data = d.temp.expl, method = "bray", permutations = 999)
 adonis_unripe
 
-d.temp <- as.dist(SD_inter[which(SD_inter$tissue=="ripe"), 
-                           which(grepl("rf" , colnames(SD_inter)))  ])
-d.temp.expl <- SD_inter[which(SD_inter$tissue=="ripe"), c(1:5)]
+d.temp <- as.dist(SD_inter[which(SD_inter_expl$tissue=="ripe"), 
+                           which(SD_inter_expl$tissue=="ripe")])
+d.temp.expl <- SD_inter_expl[which(SD_inter_expl$tissue=="ripe"),]
 adonis_ripe <- adonis2(d.temp ~ species, strata='PlantID', data = d.temp.expl, method = "bray", permutations = 999)
 adonis_ripe
 
@@ -1050,7 +941,7 @@ prop.variance.SD <- rbind(prop.variance.SD, data.frame(
 
 prop.variance.all <- rbind(prop.variance, prop.variance.SD)
 
-write.csv(prop.variance.all, file="prop_variance_all.csv")
+write.csv(prop.variance.all, file="./Outputs/Table4_prop_variance_all.csv")
 
 
 
@@ -1085,15 +976,15 @@ p2 <- ggplot(s.beta.div, aes(tissue, beta.div, fill=tissue)) +
   annotate("text", x = 1:4, y = c(0.48, 0.64, 0.52, 0.51), label = c("A", "B", "AB", "B")) 
 p2
 
-cairo_pdf(height=5, width=3, family="sans",filename="betadiv.pdf")
+cairo_pdf(height=5, width=3, family="sans",filename="./Outputs/Figure6_betadiv.pdf")
 grid.arrange(p, p2)
 dev.off()
 
-tiff(height=375, width=225, filename="betadiv.tiff", type="cairo") #0.8*widths
+tiff(height=375, width=225, filename="./Outputs/Figure6_betadiv.tiff", type="cairo") #0.8*widths
 grid.arrange(p, p2)
 dev.off()
 
-postscript(height=5, width=3,family="sans", file="betadiv.eps")
+postscript(height=5, width=3,family="sans", file="./Outputs/Figure6_betadiv.eps")
 grid.arrange(p, p2)
 dev.off()
 
