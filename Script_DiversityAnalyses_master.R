@@ -548,7 +548,9 @@ asymp.finalest <- allCoefEst[which(allCoefEst$model_type=="asymp" & allCoefEst$p
 asymp.finalest
 #save these for table
 write.csv(asymp.finalest, file="./Outputs/Table3_gammaestimates.csv")
+
 #save.image("Workspace_PiperChem_Gamma")
+
 
 
 #leaf is lower than all other fruit tissues, 95% CIs do not cross. 
