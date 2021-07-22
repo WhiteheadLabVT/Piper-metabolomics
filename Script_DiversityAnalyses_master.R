@@ -1,8 +1,3 @@
-#On 07/20 finished debugging rarefaction, looks similar to before but still 
-#should re-run with 5000 bootstraps and update numbers in paper to match what
-#is saved as outputs in repository
-
-
 
 library(dplyr) #version 0.8.3
 library(lme4) #version 1.1-21
