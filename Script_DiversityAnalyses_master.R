@@ -4,16 +4,16 @@
 
 
 
-library(dplyr)
-library(lme4)
-library(ggplot2)
-library(gridExtra)
-library(multcomp)
-library(vegan)  #version 2.5-6
-library(lmPerm)
-library(viridis)
-library(scales)
-library(VennDiagram)
+library(dplyr) #version 0.8.3
+library(lme4) #version 1.1-21
+library(ggplot2) #version 3.3.5
+library(gridExtra) #version 2.3
+library(multcomp) #version 1.4-10
+library(vegan)  #version 2.5-5 functions are buggy with later versions
+library(lmPerm) #version 2.1.0
+library(viridis) #version 0.5.1
+library(scales) #version 1.0.0
+library(VennDiagram) #version 1.6.20
 
 
 #-----------------------------------------------------
@@ -245,7 +245,7 @@ for(i in 1: length(levels(div$sp))){
   adonis.byspecies <- rbind(adonis.byspecies, newrow)
 }
 
-
+adonis.byspecies
 #always see an overall effect of tissue
 
 
@@ -354,9 +354,8 @@ l <- length(overlap$a9)
 #set4=u
 
 palVenn <- pal[c(1,4,2,3)]
-png(height=500, width=500, filename="./Outputs/Fig1_Venn.tiff", type="cairo")
-#tiff(height=500, width=500, filename="./Outputs/Fig1_Venn.tiff", type="cairo")
-#cairo_pdf(height=7, width=7, filename="./Outputs/Fig1_Venn.pdf")
+#png(height=500, width=500, filename="./Outputs/Fig1_Venn.tiff", type="cairo")
+cairo_pdf(height=7, width=7, filename="./Outputs/Fig1_Venn.pdf")
 #cairo_ps(height=7, width=7, filename="./Outputs/Fig1_Venn.eps")
 venn <- draw.quad.venn(length(lf), length(r), length(s), length(u), length(intersect(lf, r)),
                        length(intersect(lf, s)),length(intersect(lf, u)),length(intersect(r,s)),
@@ -527,7 +526,7 @@ for(i in 1:length(levels(div$tissue))){
   tiss <- levels(div$tissue)[i]
   d.temp <- div[which(div$tissue==tiss), -c(1:6)]
   m.temp <- div[which(div$tissue==tiss), c(1,2)]
-  CPR_out <- CPR(d.temp, m.temp, reps=500) 
+  CPR_out <- CPR(d.temp, m.temp, reps=5000) 
   curves <- CPR_out[[3]]
   curves$tiss <- tiss
   curves <- curves[c(5,1:4)]
@@ -554,6 +553,8 @@ asymp.finalest <- allCoefEst[which(allCoefEst$model_type=="asymp" & allCoefEst$p
 asymp.finalest
 #save these for table
 write.csv(asymp.finalest, file="./Outputs/Table3_gammaestimates.csv")
+#save.image("Workspace_PiperChem_Gamma")
+
 
 #leaf is lower than all other fruit tissues, 95% CIs do not cross. 
 
