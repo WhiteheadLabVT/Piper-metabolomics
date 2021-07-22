@@ -718,7 +718,7 @@ ggsave("./Outputs/Figure4_Alphadiv.pdf", width = 15, height = 15, units = "cm", 
 
 load("Workspace_PiperChem")
 
-#chemical composition-----------
+#------------Chemical composition-----------
 #First looking at beta-diversity (i.e. sample-to-sample variance) 
 #in chemical composition, based on compound presence/absence
 
@@ -858,7 +858,7 @@ prop.variance
 #"prop.var.resid" shows the proportion of variance explained by
 #individual sample within species
 
-#structural composition-----------
+#------------Structural composition-----------
 #Now looking at structural beta-diversity (i.e. sample-to-sample variance) 
 #in structural composition, based on intersample distances in structural 
 #similarity cosine scores
