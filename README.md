@@ -25,7 +25,7 @@ Variables include:
 
 SampleID: the identification code for each individual sample as run on the UPLC-MS instrument. The format is "species_organ_sampleNumber_dateRun".
 
-Species: the epithet of the #Piper species to which the sample belongs.
+Species: the epithet of the *Piper* species to which the sample belongs.
 
 Tissue: the tissue or organ from which the sample was extracted. Leaf = mature leaf, ripe = ripe pulp, unripe = unripe pulp, seed = ripe seed. 
 
@@ -40,7 +40,7 @@ Variables include:
 
 SampleID: the identification code for each individual sample as run on the UPLC-MS instrument. The format is "species_organ_sampleNumber_dateRun".
 
-sp: the species epithet of the #Piper species to which the sample belongs
+sp: the species epithet of the *Piper* species to which the sample belongs
 
 tissue: the tissue or organ from which the sample was extracted. Leaf = mature leaf, ripe = ripe pulp, unripe = unripe pulp, seed = ripe seed. 
 
@@ -54,10 +54,14 @@ All other variables are molecular ions, represented by their mass:charge ratio a
 
 This repository contains 4 R scripts.
 
-### 1) Script_DiversityAnalyses_master.R
+### 1) Script_DiversityAnalyses_master.R,
+This script was used for Bray-Curtis, NMDS, machine learning, and all diversity analyses.
 
 ### 2) molec_net_piper12sp_pt1_v3.R
+This script was used to prepare fragmentation spectra for chemical structural similarity analyses.
 
 ### 3) molec_net_piper12sp_pt2_v4.R
+This script was used to conduct chemical structural similarity analyses.
 
 ### 4) xcms_params_pos_CDF_2019_07_17.R
+This script was used to apply XCMS and CAMERA to extract and annotate molecular ion peak tables from raw UPLC-MS files.
