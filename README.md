@@ -25,7 +25,7 @@ Variables include:
 
 SampleID: the identification code for each individual sample as run on the UPLC-MS instrument. The format is "species_organ_sampleNumber_dateRun".
 
-Species: the epithet of the Piper species to which the sample belongs.
+Species: the epithet of the #Piper species to which the sample belongs.
 
 Tissue: the tissue or organ from which the sample was extracted. Leaf = mature leaf, ripe = ripe pulp, unripe = unripe pulp, seed = ripe seed. 
 
@@ -33,7 +33,21 @@ PlantID: the identification number of the individual plant from which the sample
 
 chem_similarity_internal: the mean cosine-scored pairwise chemical structural similarity between each compound in a given sample.
 
-### 3) 
+### 3) Data_Peak_Table.csv
+This is a table containing the curated output of all molecular features and ion abundances yielded by XCMS-CAMERA processing of raw data from low ionization energy UPLC-MS experiments. All putative molecular ions and their TIC abundances are included for each sample. Features annotated by CAMERA as adducts, isotopologues, or contaminants, have been removed.  
+
+Variables include:
+
+SampleID: the identification code for each individual sample as run on the UPLC-MS instrument. The format is "species_organ_sampleNumber_dateRun".
+
+sp: the species epithet of the #Piper species to which the sample belongs
+
+tissue: the tissue or organ from which the sample was extracted. Leaf = mature leaf, ripe = ripe pulp, unripe = unripe pulp, seed = ripe seed. 
+
+PlantID: the identification number of the individual plant from which the sample was collected. 
+
+All other variables are molecular ions, represented by their mass:charge ratio and retention time in minutes, written as "m/z_retention time"
+
 
 
 ## Analysis Scripts
