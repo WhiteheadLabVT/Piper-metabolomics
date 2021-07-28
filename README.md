@@ -52,10 +52,12 @@ All other variables are molecular ions, represented by their mass:charge ratio a
 
 ## Analysis Scripts
 
-There are x scripts:
+This repository contains 4 R scripts.
 
-### Script_1.R
+### 1) Script_DiversityAnalyses_master.R
 
-### Script_2.R
+### 2) molec_net_piper12sp_pt1_v3.R
 
-### Script_3.R
+### 3) molec_net_piper12sp_pt2_v4.R
+
+### 4) xcms_params_pos_CDF_2019_07_17.R
