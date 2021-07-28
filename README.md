@@ -13,10 +13,26 @@ Our overall objective in this study is to test the hypothesis that fruits can ac
 
 ## Data files
 
-There are x total data files:
+This repository contains 3 data files:
 
-### 1)  
-### 2) 
+### 1)  Data_Intersample_Structural_Similarity.csv
+This is a raw output file from the chemical structural similarity analysis. It is a matrix displaying the mean cosine-scored pairwise chemical structural similarity between each sample. Each row and each column represent one sample, as indicated by the sample name in the row and column headings. Each cell shows the similarity of the sample indicated in the row heading to the sample indicated in the column heading.
+   
+### 2) Data_Intersample_Structural_Similarity.csv
+This table is derived from the chemical structural similarity analysis. It provides the mean cosine-scored pairwise chemical structural similarity between each compound in a given sample, shown for all samples and with the species, tissue type/organ, and individual plant ID listed alongside each sample ID. 
+
+Variables include:
+
+SampleID: the identification code for each individual sample as run on the UPLC-MS instrument. The format is "species_organ_sampleNumber_dateRun".
+
+Species: the epithet of the Piper species to which the sample belongs.
+
+Tissue: the tissue or organ from which the sample was extracted. Leaf = mature leaf, ripe = ripe pulp, unripe = unripe pulp, seed = ripe seed. 
+
+PlantID: the identification number of the individual plant from which the sample was collected. 
+
+chem_similarity_internal: the mean cosine-scored pairwise chemical structural similarity between each compound in a given sample.
+
 ### 3) 
 
 
