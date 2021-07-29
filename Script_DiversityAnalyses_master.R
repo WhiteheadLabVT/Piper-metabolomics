@@ -22,8 +22,7 @@ div_all <- read.csv("Data_Peak_Table.csv")
 
 
 #replacing all values < 100 with zero.
-#This is per recommendation by Jerry that many of these values are just noise and not
-#real peaks in the chromatograms
+#This is based on examining noise levels in chromatograms. 
 div <- div_all
 for (i in 5:1315){
   d <- div[i]
