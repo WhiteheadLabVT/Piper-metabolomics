@@ -55,7 +55,7 @@ All other variables are molecular ions, represented by their mass:charge ratio a
 This repository contains 6 R scripts.
 
 ### 1) Script_DiversityAnalyses_master.R,
-This script was used for all diversity analyses.
+This script was used for all diversity analyses comparing leaves and fruits.
 
 ### 2) Script_RandomForest_Piper.R
 This script was used for Random Forest and Boruta machine learning analyses.
