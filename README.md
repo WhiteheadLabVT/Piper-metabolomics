@@ -52,16 +52,22 @@ All other variables are molecular ions, represented by their mass:charge ratio a
 
 ## Analysis Scripts
 
-This repository contains 4 R scripts.
+This repository contains 6 R scripts.
 
 ### 1) Script_DiversityAnalyses_master.R,
-This script was used for Bray-Curtis, NMDS, machine learning, and all diversity analyses.
+This script was used for all diversity analyses comparing leaves and fruits.
 
-### 2) molec_net_piper12sp_pt1_v3.R
+### 2) Script_RandomForest_Piper.R
+This script was used for Random Forest and Boruta machine learning analyses.
+
+### 3) chem_composition_similarity_occurrence_v3.R
+This script was used to calculate and analyze indices of chemical similarity, and for NMDS analysis.
+
+### 4) molec_net_piper12sp_pt1_v3.R
 This script was used to prepare fragmentation spectra for chemical structural similarity analyses.
 
-### 3) molec_net_piper12sp_pt2_v4.R
+### 5) molec_net_piper12sp_pt2_v4.R
 This script was used to conduct chemical structural similarity analyses.
 
-### 4) xcms_params_pos_CDF_2019_07_17.R
+### 6) xcms_params_pos_CDF_2019_07_17.R
 This script was used to apply XCMS and CAMERA to extract and annotate molecular ion peak tables from raw UPLC-MS files.
