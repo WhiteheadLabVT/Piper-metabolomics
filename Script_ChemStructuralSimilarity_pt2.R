@@ -80,7 +80,7 @@ calcCSCS = function(date = 20181204, species = FALSE, outfile)
 	}
 	save(sampsByCompounds, pairwise.comps, diags, file = outfile)
 	
-	write.csv(diags, "cscs_p12_selfcomp_ticuni.csv") # within-sample similarity scores for structural complexity analysis
+	write.csv(diags, "Data_Intrasample_Structural_Similarity_matrix.csv") # within-sample similarity scores for structural complexity analysis
 	
 	for (i in 1:nspp){
 		spp1 = as.character(row.names(sampsCompsStand)[i])
@@ -126,12 +126,13 @@ calcCSCS = function(date = 20181204, species = FALSE, outfile)
 	save(sampsByCompounds, sppByCompounds, sampsCompsStand, diags, cscs, file = outfile)
 	cat("Completed cacluation of CSCS for all sample pairs","\n")
 }
-write.csv(cscs, "css_matrix.csv")
+write.csv(cscs, "Data_Intersample_Structural_similarity.csv")
    # this is the sample x sample matrix
 
-################# for converting triangular matrix to columnar format
-cscs <- read.csv("cscs_piper12spp_full_100filt_noheads.csv", header = F)
-names <- read.csv("cscs_matrix_headernames.csv", header = TRUE)
+################# for converting triangular matrix to columnar format - used for Data_Intersample_Structural_similarity and Data_Intrasample_Structural_similarity
+#move row and column headers to separate files
+cscs <- read.csv("Data_Intersample_Structural_similarity_noheaders.csv", header = F)
+names <- read.csv("css_matrix_header_names.csv", header = TRUE)
 row.names(cscs) = names$sample1
 colnames(cscs) = names$sample2
 

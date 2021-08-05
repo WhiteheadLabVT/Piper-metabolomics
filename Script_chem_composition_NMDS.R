@@ -18,9 +18,13 @@ library(venneuler)
 
 
 ########################NMDS w/ Bray-Curtis
-div.ticuni <- read.csv("allsp_diversity_ticuni_4tiss_v2.csv", header = F)
-rnames <- read.csv("allsp_diversity_rownames_4tiss_v2.csv", header = T)
-cnames <- read.csv("allsp_diversity_colnames_v2.csv", header = T)
+# load XCMS-CAMERA peak table, converted to presence/absence by changing all non-zero ion intensity values to "1".
+# remove all columns except "mz_rt" or compound ID number. The resultant table should be samples (row) x compounds (column). 
+# transfer row and column headers to separate files.
+
+div.ticuni <- read.csv("Data_Peak_Table_samps_compounds_noheads.csv", header = F) 
+rnames <- read.csv("Data_Peak_Table_rownames.csv", header = T)
+cnames <- read.csv("Data_Peak_Table_colnames.csv", header = T)
 row.names(div.ticuni) = rnames$row
 colnames(div.ticuni) = cnames$col
 
@@ -36,8 +40,8 @@ text(div.ticuni.mds, pos = 4, cex = 0.3, display = "sites")
 
 
 
-div.css.allsamps <- read.csv("css_p12_ticuni_dissim_nohead.csv", header = F)
-names.allsamps <- read.csv("cscs_matrix_headernames.csv", header = T)
+div.css.allsamps <- read.csv("Data_Intersample_Structural_similarity_noheaders.csv.csv", header = F)
+names.allsamps <- read.csv("cscs_matrix_header_names.csv", header = T)
 row.names(div.css.allsamps) = names.allsamps$sample1
 colnames(div.css.allsamps) = names.allsamps$sample1
 div.css.mdsexp <- read.csv("css_piper12spp_ticuni_nmdsexp.csv", header = T)
