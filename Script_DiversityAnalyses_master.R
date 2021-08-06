@@ -130,7 +130,7 @@ cnames <- read.csv("Data_Peak_Table_colnames.csv", header = T)
 row.names(div.ticuni) = rnames$row
 colnames(div.ticuni) = cnames$col
 
-div.ticuni.mdsexp <- read.csv("allsp_diversity_ticuni_4tiss_nmdsexp.csv", header = T) #this file assigns colors and shapes to each sample
+div.ticuni.mdsexp <- read.csv("Data_composition_nmdsexp.csv", header = T) #this file assigns colors and shapes to each sample
 row.names(div.ticuni.mdsexp) = rnames$row
 div.ticuni.mds<-metaMDS(div.ticuni, distance = "bray", k = 6, trymax = 100, autotransform =TRUE, noshare = 0.1, expand = TRUE, trace = 1, plot = FALSE)
 cor(vegdist(div.ticuni), dist(div.ticuni.mds$points))^2 
@@ -147,7 +147,8 @@ div.css.allsamps <- read.csv("Data_Intersample_Structural_similarity_noheaders.c
 names.allsamps <- read.csv("cscs_matrix_header_names.csv", header = T)
 row.names(div.css.allsamps) = names.allsamps$sample1
 colnames(div.css.allsamps) = names.allsamps$sample1
-div.css.mdsexp <- read.csv("css_piper12spp_ticuni_nmdsexp.csv", header = T)
+
+div.css.mdsexp <- read.csv("Data_css_nmdsexp.csv", header = T) #this file assigns colors and shapes to each sample
 row.names(div.css.mdsexp) = names.allsamps$sample1
 div.css.allsamps.mds <-metaMDS(div.css.allsamps, k = 6, maxit = 10000, trymax = 1000)# sratmax = 0.9999999999, sfgrmin = 1e-10)
 plot(div.css.allsamps.mds, choices = c(1, 2), type = "n") #xlim = c(-0.5, 0.5), ylim = c(-0.4, 0.4)) #plots the ordination axes

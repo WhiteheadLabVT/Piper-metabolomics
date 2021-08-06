@@ -12,9 +12,9 @@ setwd("../ProteoSAFe-METABOLOMICS-SNETS-b7ed685e-view_network")
 network <- read.csv("network_curated.csv", header = TRUE)
 network$CLUSTERID1 = as.factor(network$CLUSTERID1)
 network$CLUSTERID2 = as.factor(network$CLUSTERID2)
-sampsByCompounds <- read.csv("sampsByCompounds_apf_ticuni.csv", header = FALSE)
-sampnames <- read.csv("sampsByCompounds_all_pos_full_rownames.csv", header = TRUE)
-clustnames <- read.csv("sampsByCompounds_all_pos_full_colnames.csv", header = TRUE)
+sampsByCompounds <- read.csv("sampsByCompounds_curated.csv", header = FALSE) # when curating sampsByCompounds from part 1, if editing .csv directly, save row and column headers to separate files. 
+sampnames <- read.csv("sampsByCompounds_row_names.csv", header = TRUE)
+clustnames <- read.csv("sampsByCompounds_column_names.csv", header = TRUE)
 row.names(sampsByCompounds) = sampnames$sample
 colnames(sampsByCompounds) = clustnames$colnames
 
