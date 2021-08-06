@@ -13,12 +13,12 @@ Our overall objective in this study is to test the hypothesis that fruits can ac
 
 ## Data files
 
-This repository contains 3 data files:
+This repository contains 3 standalone data files and 2 data file folders:
 
-### 1)  Data_Intersample_Structural_Similarity.csv
+### File 1) Data_Intersample_Structural_Similarity.csv
 This is a raw output file from the chemical structural similarity analysis. It is a matrix displaying the mean cosine-scored pairwise chemical structural similarity between each sample. Each row and each column represent one sample, as indicated by the sample name in the row and column headings. Each cell shows the similarity of the sample indicated in the row heading to the sample indicated in the column heading.
    
-### 2) Data_Intersample_Structural_Similarity.csv
+### File 2) Data_Intersample_Structural_Similarity.csv
 This table is derived from the chemical structural similarity analysis. It provides the mean cosine-scored pairwise chemical structural similarity between each compound in a given sample, shown for all samples and with the species, tissue type/organ, and individual plant ID listed alongside each sample ID. 
 
 Variables include:
@@ -33,7 +33,7 @@ PlantID: the identification number of the individual plant from which the sample
 
 chem_similarity_internal: the mean cosine-scored pairwise chemical structural similarity between each compound in a given sample.
 
-### 3) Data_Peak_Table.csv
+### File 3) Data_Peak_Table.csv
 This is a table containing the curated output of all molecular features and ion abundances yielded by XCMS-CAMERA processing of raw data from low ionization energy UPLC-MS experiments. All putative molecular ions and their TIC abundances are included for each sample. Features annotated by CAMERA as adducts, isotopologues, or contaminants, have been removed.  
 
 Variables include:
@@ -48,26 +48,27 @@ PlantID: the identification number of the individual plant from which the sample
 
 All other variables are molecular ions, represented by their mass:charge ratio and retention time in minutes, written as "m/z_retention time"
 
+### Folder 1) Data_ChemStructuralSimilarity
+This folder contains data files used to run Chemical Structural Similarity analyses. See analysis scripts 1 and 2 for details. 
 
+### Folder 2) Data_NMDS
+This folder contains data files with graphical parameters used to produce graphical output from Nonmetric Multidimensional Scaling analyses. See analysis script 3, lines 120-156 for details.
 
 ## Analysis Scripts
 
-This repository contains 6 R scripts.
+This repository contains 5 R scripts.
 
-### 1) Script_DiversityAnalyses_master.R,
-This script was used for all diversity analyses comparing leaves and fruits.
-
-### 2) Script_RandomForest_Piper.R
-This script was used for Random Forest and Boruta machine learning analyses.
-
-### 3) chem_composition_similarity_occurrence_v3.R
-This script was used to calculate and analyze indices of chemical similarity, and for NMDS analysis.
-
-### 4) molec_net_piper12sp_pt1_v3.R
+### 1) Script_ChemStructuralSimilarity_pt1.R
 This script was used to prepare fragmentation spectra for chemical structural similarity analyses.
 
-### 5) molec_net_piper12sp_pt2_v4.R
+### 2) Script_ChemStructuralSimilarity_pt2.R
 This script was used to conduct chemical structural similarity analyses.
 
-### 6) xcms_params_pos_CDF_2019_07_17.R
+### 3) Script_DiversityAnalyses_master.R,
+This script was used for NMDS and all diversity analyses comparing leaves and fruits.
+
+### 4) Script_RandomForest_Piper.R
+This script was used for Random Forest and Boruta machine learning analyses.
+
+### 5)Script_XCMS-CAMERA.R
 This script was used to apply XCMS and CAMERA to extract and annotate molecular ion peak tables from raw UPLC-MS files.
