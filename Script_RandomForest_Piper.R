@@ -5,8 +5,17 @@ library(Boruta)
 library(psych)
 library(dplyr)
 
+#-------------------------------------------------------------
+#  Machine Learning to explore organ-level affinities of compounds
+#--------------------------------------------------
 
-piper <- read.csv("allsp_presabs_4tiss_boruta.csv", header =TRUE)
+########## Random Forest analysis - can sample identity be predicted from chemical composition?
+
+#### Remove "sp" and "PlantID" columns from Data_Peak_Table.csv
+#### Convert ion intensities to presence/absence
+#### Save as new file "Data_Peak_Table_randfor.csv"
+
+piper <- read.csv("Data_Peak_Table_randfor.csv", header =TRUE) 
 x1 <- piper[,c(3:1313)]
 x1[is.na(x1)] <- 0
 c1 <- as.factor(paste(piper$tissue))
@@ -15,22 +24,16 @@ plot(piper_randfor)
 importance(piper_randfor)
 varImpPlot(piper_randfor)
 
+########## Boruta analysis - identifying which compounds were individually informative in Random Forest
+
 piper_boruta <- Boruta(x1, c1)
 plot(piper_boruta)
 plotImpHistory(piper_boruta)
 piper_boruta_table <- getImpRfZ(x1, c1)
 boruta_sigfeatures <- getSelectedAttributes(piper_boruta)
-write.csv(boruta_sigfeatures, "piper_boruta_sigfeats.csv")
-write.csv(piper_boruta_table, "piper_boruta_table.csv")
+write.csv(boruta_sigfeatures, "piper_boruta_sigfeats.csv") 
+#this gives a list of the compounds that had significantly higher variable importance scores than shadow variables
+#for more information on these compounds, look them up in the molecular networking classification annotation 
 
-boruta_classes <- read.csv("piper_boruta_table_classes_curated.csv", header = TRUE)
-boruta_class_means <- aov(boruta_importance ~ chem_class, data = boruta_classes)
-summary(boruta_class_means)
-varImpPlot(piper_boruta)
-TukeyHSD(boruta_class_means)
 
-mean_by_class <- tapply(boruta_classes$boruta_importance, boruta_classes$chem_class, mean)
-mean_by_class
-sd_by_class <- tapply(boruta_classes$boruta_importance, boruta_classes$chem_class, sd)
-sd_by_class
 

@@ -52,10 +52,10 @@ xset <- as(xcmsexp, "xcmsSet")
 sampclass(xset) <- sapply(1:length(files), function(x) unlist(strsplit(files[x], split = "/"))[2])
 ## applying CAMERA functions
 xset1 <- xsAnnotate(xs=xset,polarity="positive")
-xset2 <- groupFWHM(xset1, perfwhm=0.7) # CAMERA p.30
+xset2 <- groupFWHM(xset1, perfwhm=0.7) # see CAMERA package readme page 30 for more information
 xset3 <- findIsotopes(xset2, ppm=20, mzabs=0.015,intval="intb")
 xset4 <- groupCorr(xset3,cor_eic_th=0.1, pval=1.0, graphMethod="lpc", calcIso = TRUE, calcCiS = TRUE, calcCaS = ifelse(
- sum(sampclass(xset) == "sample") > 3, TRUE, FALSE)) #p. 28
+ sum(sampclass(xset) == "sample") > 3, TRUE, FALSE)) # see CAMERA package readme page 28
 xsetFA <- findAdducts(xset4, polarity="positive", rules = NULL) 
 xset5<- getPeaklist(xsetFA)
 xset5$rt_in_min<- (xset5$rt)/60	
@@ -74,4 +74,4 @@ xset5$TIC_Average <- rowMeans(xset5[,c(7+length(unique(sampclass(xset)))+which(s
 xset5$TIC_ratio <- xset5$Blank_Average/xset5$TIC_Average
 xset6 <- xset5[xset5$Blank==0 & xset5$TIC_ratio < 0.33, ]
 
-write.csv(xset6, "aduncum_v5_pos.csv")
+write.csv(xset6, "Data_Peak_Table.csv")
