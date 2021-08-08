@@ -7,7 +7,7 @@ by Gerald F. Schneider, Diego Salazar Amoretti, Sherry B. Hildreth, Richard F. H
 
 Publication information: Accepted for publication in Frontiers in Plant Science, *official date TBD*
 
-DOI: *TBD*
+DOI: 10.5281/zenodo.5142600
 
 Our overall objective in this study is to test the hypothesis that fruits can act as incubators of phytochemical diversification in plants. First, we describe the occurrence patterns of secondary metabolites across leaves, fruit pulp, and seeds in 12 *Piper* species, providing baseline data for understanding *Piper* secondary metabolite function. We use untargeted mass spectrometry-based metabolomics, molecular networking, and in-silico fragmentation modeling to characterize undescribed metabolites at the class level, followed by machine learning and distance-based methods to compare composition across organs and species. Second, we use these data to test predictions of high relative diversity in fruits derived from our hypothesis of fruit-driven phytochemical diversification. We compare multiple dimensions of phytochemical diversity across leaves and fruits, including the richness at multiple scales (alpha and gamma diversity), variability (beta diversity), and structural complexity of secondary metabolites.
 
