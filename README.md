@@ -54,21 +54,25 @@ This folder contains data files used to run Chemical Structural Similarity analy
 ### Folder 2) Data_NMDS
 This folder contains data files with graphical parameters used to produce graphical output from Nonmetric Multidimensional Scaling analyses. See analysis script 3, lines 120-156 for details.
 
-## Analysis Scripts
+## Analysis Scripts and R Workspace files
 
-This repository contains 5 R scripts.
+This repository contains 5 R scripts and 1 R workspace.
 
-### 1) Script_ChemStructuralSimilarity_pt1.R
+### Script 1) Script_ChemStructuralSimilarity_pt1.R
 This script was used to prepare fragmentation spectra for chemical structural similarity analyses.
 
-### 2) Script_ChemStructuralSimilarity_pt2.R
+### Script 2) Script_ChemStructuralSimilarity_pt2.R
 This script was used to conduct chemical structural similarity analyses.
 
-### 3) Script_DiversityAnalyses_master.R,
+### Script 3) Script_DiversityAnalyses_master.R,
 This script was used for NMDS and all diversity analyses comparing leaves and fruits.
 
-### 4) Script_RandomForest_Piper.R
+### Script 4) Script_RandomForest_Piper.R
 This script was used for Random Forest and Boruta machine learning analyses.
 
-### 5)Script_XCMS-CAMERA.R
+### Script 5) Script_XCMS-CAMERA.R
 This script was used to apply XCMS and CAMERA to extract and annotate molecular ion peak tables from raw UPLC-MS files.
+
+### Workspace 1) Workspace_DiversityAnalyses_master
+This workspace includes all data subsets and functions for script Script_DiversityAnalyses_master.R 
+
