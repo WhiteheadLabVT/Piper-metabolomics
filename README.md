@@ -7,7 +7,7 @@ by Gerald F. Schneider, Diego Salazar Amoretti, Sherry B. Hildreth, Richard F. H
 
 Publication information: Accepted for publication in Frontiers in Plant Science, *official date TBD*
 
-DOI: *TBD*
+DOI: 10.5281/zenodo.5142600
 
 Our overall objective in this study is to test the hypothesis that fruits can act as incubators of phytochemical diversification in plants. First, we describe the occurrence patterns of secondary metabolites across leaves, fruit pulp, and seeds in 12 *Piper* species, providing baseline data for understanding *Piper* secondary metabolite function. We use untargeted mass spectrometry-based metabolomics, molecular networking, and in-silico fragmentation modeling to characterize undescribed metabolites at the class level, followed by machine learning and distance-based methods to compare composition across organs and species. Second, we use these data to test predictions of high relative diversity in fruits derived from our hypothesis of fruit-driven phytochemical diversification. We compare multiple dimensions of phytochemical diversity across leaves and fruits, including the richness at multiple scales (alpha and gamma diversity), variability (beta diversity), and structural complexity of secondary metabolites.
 
@@ -54,21 +54,25 @@ This folder contains data files used to run Chemical Structural Similarity analy
 ### Folder 2) Data_NMDS
 This folder contains data files with graphical parameters used to produce graphical output from Nonmetric Multidimensional Scaling analyses. See analysis script 3, lines 120-156 for details.
 
-## Analysis Scripts
+## Analysis Scripts and R Workspace files
 
-This repository contains 5 R scripts.
+This repository contains 5 R scripts and 1 R workspace.
 
-### 1) Script_ChemStructuralSimilarity_pt1.R
+### Script 1) Script_ChemStructuralSimilarity_pt1.R
 This script was used to prepare fragmentation spectra for chemical structural similarity analyses.
 
-### 2) Script_ChemStructuralSimilarity_pt2.R
+### Script 2) Script_ChemStructuralSimilarity_pt2.R
 This script was used to conduct chemical structural similarity analyses.
 
-### 3) Script_DiversityAnalyses_master.R,
+### Script 3) Script_DiversityAnalyses_master.R,
 This script was used for NMDS and all diversity analyses comparing leaves and fruits.
 
-### 4) Script_RandomForest_Piper.R
+### Script 4) Script_RandomForest_Piper.R
 This script was used for Random Forest and Boruta machine learning analyses.
 
-### 5)Script_XCMS-CAMERA.R
+### Script 5) Script_XCMS-CAMERA.R
 This script was used to apply XCMS and CAMERA to extract and annotate molecular ion peak tables from raw UPLC-MS files.
+
+### Workspace 1) Workspace_DiversityAnalyses_master
+This workspace includes all data subsets and functions for script Script_DiversityAnalyses_master.R 
+
